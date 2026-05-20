@@ -22,6 +22,7 @@ data/user/
         └── _detached_code_execution/
 """
 
+import os
 from pathlib import Path
 from typing import Literal, cast
 
@@ -78,6 +79,18 @@ class PathService:
     def __init__(self, workspace_root: Path | None = None):
         self._project_root = Path(__file__).resolve().parent.parent.parent
         self._uses_default_workspace_root = workspace_root is None
+        # Allow deployments (e.g. dynamic_router user containers) to relocate
+        # DeepTutor runtime data under a mounted workspace directory.
+        #
+        # Example:
+        #   DEEPTUTOR_WORKSPACE_ROOT=/workspace/deeptutor
+        #
+        # This keeps DeepTutor fully self-contained under /workspace/deeptutor
+        # without polluting other paths mounted at /workspace.
+        env_value = str(os.getenv("DEEPTUTOR_WORKSPACE_ROOT", "")).strip()
+        if env_value:
+            workspace_root = Path(env_value)
+
         self._workspace_root = (workspace_root or self._project_root / "data").resolve()
         self._user_data_dir = (self._workspace_root / "user").resolve()
 

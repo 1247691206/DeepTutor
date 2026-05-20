@@ -52,6 +52,20 @@ function isLoopbackHost(host: string): boolean {
 export function resolveBase(): string {
   const base = API_BASE_URL;
   if (typeof window === "undefined") return base;
+
+  // When DeepTutor is hosted behind dynamic_router, the browser URL looks like:
+  //   http(s)://<router-host>:<router-port>/u/<username>/...
+  // In that case, the API must be routed through the same /u/<username> prefix
+  // so dynamic_router can inject x-finclaw-user and forward to the right container.
+  //
+  // We derive the effective base from window.location instead of relying on
+  // NEXT_PUBLIC_API_BASE (which cannot encode per-user prefixes at build time).
+  const m = window.location.pathname.match(/^\/u\/([^/]+)(?:\/|$)/);
+  if (m) {
+    const userPrefix = `/u/${m[1]}`;
+    return `${window.location.origin}${userPrefix}`.replace(/\/+$/, "");
+  }
+
   try {
     const url = new URL(base);
     const clientHost = window.location.hostname;

@@ -157,6 +157,7 @@ COPY --from=frontend-builder /app/web/public/ ./web/public/
 
 # Copy application source code
 COPY deeptutor/ ./deeptutor/
+COPY deeptutor_compat/ ./deeptutor_compat/
 COPY deeptutor_cli/ ./deeptutor_cli/
 COPY scripts/ ./scripts/
 COPY pyproject.toml ./
@@ -180,7 +181,7 @@ RUN mkdir -p \
     data/user/logs \
     data/knowledge_bases
 
-# Create supervisord configuration for running both services
+# Create supervisord configuration for running backend + frontend + compat gateway
 # Log output goes to stdout/stderr so docker logs can capture them
 RUN mkdir -p /etc/supervisor/conf.d
 
@@ -213,6 +214,18 @@ stdout_logfile_maxbytes=0
 stderr_logfile=/dev/fd/2
 stderr_logfile_maxbytes=0
 environment=NODE_ENV="production"
+
+[program:compat-gateway]
+command=/bin/bash /app/start-compat-gateway.sh
+directory=/app
+autostart=true
+autorestart=true
+startsecs=2
+stdout_logfile=/dev/fd/1
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/fd/2
+stderr_logfile_maxbytes=0
+environment=PYTHONPATH="/app",PYTHONUNBUFFERED="1"
 EOF
 
 RUN sed -i 's/\r$//' /etc/supervisor/conf.d/deeptutor.conf
@@ -279,6 +292,20 @@ EOF
 
 RUN sed -i 's/\r$//' /app/start-frontend.sh && chmod +x /app/start-frontend.sh
 
+# Create compat gateway startup script (single-port entrypoint for dynamic_router)
+RUN cat > /app/start-compat-gateway.sh <<'EOF'
+#!/bin/bash
+set -e
+
+GATEWAY_PORT=${GATEWAY_PORT:-3000}
+
+echo "[Compat]   🚪 Starting compat gateway on port ${GATEWAY_PORT}..."
+
+exec python -m uvicorn deeptutor_compat.gateway:app --host 0.0.0.0 --port ${GATEWAY_PORT}
+EOF
+
+RUN sed -i 's/\r$//' /app/start-compat-gateway.sh && chmod +x /app/start-compat-gateway.sh
+
 # Create entrypoint script
 RUN cat > /app/entrypoint.sh <<'EOF'
 #!/bin/bash
@@ -291,9 +318,13 @@ echo "============================================"
 # Set default ports if not provided
 export BACKEND_PORT=${BACKEND_PORT:-8001}
 export FRONTEND_PORT=${FRONTEND_PORT:-3782}
+export GATEWAY_PORT=${GATEWAY_PORT:-3000}
+export DEEPTUTOR_WORKSPACE_ROOT=${DEEPTUTOR_WORKSPACE_ROOT:-/workspace/deeptutor}
 
 echo "📌 Backend Port: ${BACKEND_PORT}"
 echo "📌 Frontend Port: ${FRONTEND_PORT}"
+echo "📌 Gateway Port: ${GATEWAY_PORT}"
+echo "📌 DeepTutor Data Root: ${DEEPTUTOR_WORKSPACE_ROOT}"
 
 # Check for required environment variables
 if [ -z "$LLM_API_KEY" ]; then
@@ -329,11 +360,11 @@ EOF
 RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Expose ports
-EXPOSE 8001 3782
+EXPOSE 3000 8001 3782
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:${BACKEND_PORT:-8001}/ || exit 1
+    CMD curl -f http://localhost:${GATEWAY_PORT:-3000}/health || exit 1
 
 # Set entrypoint
 ENTRYPOINT ["/app/entrypoint.sh"]

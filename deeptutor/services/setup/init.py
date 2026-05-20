@@ -46,7 +46,13 @@ DEFAULT_MAIN_SETTINGS = {
     },
     "tools": {
         "run_code": {
-            "allowed_roots": ["./data/user"],
+            # Loose mode for shared deployments: allow the whole DeepTutor data root
+            # under the mounted workspace (dynamic_router user containers mount /workspace).
+            # This keeps DeepTutor self-contained under /workspace/deeptutor without
+            # polluting /workspace/{agents,skills,mcps,envs}.
+            #
+            # Note: these defaults are only written when settings files are missing.
+            "allowed_roots": ["/workspace/deeptutor", "./data/user", "./data"],
         },
         "web_search": {
             "enabled": True,
