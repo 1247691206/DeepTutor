@@ -70,6 +70,8 @@ class CategoryAddRequest(BaseModel):
 
 class UpsertEntryRequest(BaseModel):
     session_id: str
+    """When the session does not exist yet (e.g. OxCa Levels practice), create it."""
+    session_title: str | None = None
     question_id: str
     question: str
     question_type: str = ""
@@ -81,14 +83,32 @@ class UpsertEntryRequest(BaseModel):
     is_correct: bool = False
 
 
+class EnsureSessionRequest(BaseModel):
+    session_id: str
+    title: str = Field(default="Practice notebook", min_length=1, max_length=100)
+
+
 # ── Entry endpoints ──────────────────────────────────────────────
+
+
+@router.post("/sessions/ensure")
+async def ensure_notebook_session(payload: EnsureSessionRequest):
+    """Create an empty chat session used to group notebook entries (Levels practice)."""
+    store = get_sqlite_session_store()
+    if await store.get_session(payload.session_id) is None:
+        await store.create_session(title=payload.title[:100], session_id=payload.session_id)
+    return {"session_id": payload.session_id}
 
 
 @router.post("/entries/upsert")
 async def upsert_single_entry(payload: UpsertEntryRequest):
     store = get_sqlite_session_store()
+    if await store.get_session(payload.session_id) is None:
+        title = (payload.session_title or "Practice notebook").strip() or "Practice notebook"
+        await store.create_session(title=title[:100], session_id=payload.session_id)
+    entry_payload = payload.model_dump(exclude={"session_title"})
     try:
-        await store.upsert_notebook_entries(payload.session_id, [payload.model_dump()])
+        await store.upsert_notebook_entries(payload.session_id, [entry_payload])
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     entry = await store.find_notebook_entry(payload.session_id, payload.question_id)
