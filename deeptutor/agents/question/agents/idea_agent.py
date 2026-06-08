@@ -49,13 +49,18 @@ class IdeaAgent(BaseAgent):
         existing_concentrations: list[str] | None = None,
         batch_number: int | None = None,
         attachments: list[Any] | None = None,
+        history_context: str = "",
     ) -> dict[str, Any]:
         """
         Build grounded question templates in a single pass.
         """
         batch_size = max(1, min(int(num_ideas or 1), BATCH_SIZE))
         trace_id = f"batch-{batch_number}" if batch_number is not None else "ideation"
-        if self.enable_rag and self.kb_name:
+        attached_history = str(history_context or "").strip()
+        if attached_history:
+            knowledge_context = attached_history
+            retrievals: list[dict[str, Any]] = []
+        elif self.enable_rag and self.kb_name:
             retrievals = await self._retrieve_context(
                 user_topic,
                 trace_id=trace_id,

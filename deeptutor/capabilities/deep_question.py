@@ -88,7 +88,13 @@ class DeepQuestionCapability(BaseCapability):
         difficulty = str(overrides.get("difficulty", "") or "")
         question_type = str(overrides.get("question_type", "") or "")
         preference = str(overrides.get("preference", "") or "")
-        history_context = str(context.metadata.get("conversation_context_text", "") or "").strip()
+        # Tutor-inline quiz runs in a fresh session; the tutor transcript arrives
+        # via history_references → context.history_context, not conversation_context_text.
+        history_context = str(context.history_context or "").strip()
+        if not history_context:
+            history_context = str(
+                context.metadata.get("conversation_context_text", "") or ""
+            ).strip()
         enabled_tools = set(
             self.manifest.tools_used if context.enabled_tools is None else context.enabled_tools
         )

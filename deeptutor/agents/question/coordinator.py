@@ -158,6 +158,7 @@ class AgentCoordinator:
                 existing_concentrations=existing_concentrations,
                 batch_number=batch_number,
                 attachments=attachments,
+                history_context=history_context,
             )
             batch_templates = idea_result.get("templates", [])
             if not isinstance(batch_templates, list):
