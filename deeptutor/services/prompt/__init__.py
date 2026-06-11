@@ -24,10 +24,12 @@ from .language import (
     normalize_language,
 )
 from .manager import PromptManager, get_prompt_manager
+from .oxca_brand import apply_student_guardrail
 
 __all__ = [
     "PromptManager",
     "append_language_directive",
+    "apply_student_guardrail",
     "get_prompt_manager",
     "language_directive",
     "language_label",

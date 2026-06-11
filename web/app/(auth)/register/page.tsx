@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { register, checkIsFirstUser, fetchAuthStatus } from "@/lib/auth";
+import { PRODUCT_NAME, PRODUCT_TAGLINE } from "@/lib/product-brand";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -54,7 +55,7 @@ export default function RegisterPage() {
       {/* Logo / Title */}
       <div className="text-center mb-8">
         <h1 className="text-2xl font-semibold text-[var(--foreground)] tracking-tight">
-          DeepTutor
+          {PRODUCT_NAME}
         </h1>
         <p className="mt-1 text-sm text-[var(--muted-foreground)]">
           Create your account
@@ -180,7 +181,7 @@ export default function RegisterPage() {
       </p>
 
       <p className="mt-3 text-center text-xs text-[var(--muted-foreground)]">
-        DeepTutor · Agent-Native Learning
+        {PRODUCT_TAGLINE}
       </p>
     </div>
   );

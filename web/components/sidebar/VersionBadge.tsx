@@ -7,6 +7,7 @@ import {
   parseBuild,
   type ParsedBuild,
 } from "@/lib/version";
+import { PRODUCT_NAME } from "@/lib/product-brand";
 
 interface LatestVersionPayload {
   tag: string | null;
@@ -82,7 +83,7 @@ export function VersionBadge({ collapsed = false }: VersionBadgeProps) {
   const latest = data?.latest ?? data;
   const latestNorm = normalizeVersionTag(latest?.tag);
 
-  const { status, displayTag, href, tooltip } = useMemo(() => {
+  const { status, displayTag, tooltip } = useMemo(() => {
     let status: Status = "unknown";
     if (build?.tag && latestNorm) {
       status =
@@ -98,12 +99,6 @@ export function VersionBadge({ collapsed = false }: VersionBadgeProps) {
     // Display: prefer the running build (most accurate), fall back to the
     // latest GitHub release as an informational placeholder.
     const displayTag = build?.display ?? latestNorm ?? null;
-
-    const href =
-      latest?.url ??
-      (latestNorm
-        ? `https://github.com/HKUDS/DeepTutor/releases/tag/${latestNorm}`
-        : "https://github.com/HKUDS/DeepTutor/releases");
 
     let tooltip: string;
     if (status === "latest" && displayTag) {
@@ -121,8 +116,8 @@ export function VersionBadge({ collapsed = false }: VersionBadgeProps) {
       tooltip = t("Loading...");
     }
 
-    return { status, displayTag, href, tooltip };
-  }, [build, latestNorm, latest?.url, t]);
+    return { status, displayTag, tooltip };
+  }, [build, latestNorm, t]);
 
   // Keep the collapsed sidebar entirely free of version chrome.
   if (collapsed) return null;
@@ -137,20 +132,17 @@ export function VersionBadge({ collapsed = false }: VersionBadgeProps) {
           : "bg-[var(--muted-foreground)]/25";
 
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer noopener"
+    <span
       title={tooltip}
-      className="group/ver flex min-w-0 flex-1 items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-mono tabular-nums tracking-tight text-[var(--muted-foreground)]/55 transition-colors hover:bg-[var(--background)]/50 hover:text-[var(--muted-foreground)]"
+      className="group/ver flex min-w-0 flex-1 items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-mono tabular-nums tracking-tight text-[var(--muted-foreground)]/55"
     >
       <span
         className={`h-1.5 w-1.5 shrink-0 rounded-full transition-colors ${dotClass}`}
         aria-hidden="true"
       />
-      <span className="truncate leading-none decoration-[var(--muted-foreground)]/40 decoration-dotted underline-offset-[3px] group-hover/ver:underline">
-        {displayTag ?? "—"}
+      <span className="truncate leading-none">
+        {PRODUCT_NAME} · {displayTag ?? "—"}
       </span>
-    </a>
+    </span>
   );
 }

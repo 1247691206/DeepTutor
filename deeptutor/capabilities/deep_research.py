@@ -410,6 +410,7 @@ class DeepResearchCapability(BaseCapability):
             join_chunks,
             labeled_block,
             load_answer_now_prompts,
+            answer_now_system_prompt,
             make_skip_notice,
             stream_synthesis,
         )
@@ -419,7 +420,7 @@ class DeepResearchCapability(BaseCapability):
         trace_summary = format_trace_summary(payload.get("events"), language=context.language)
 
         prompts = load_answer_now_prompts("research", context.language)
-        system_prompt = str(prompts.get("system", "")).strip()
+        system_prompt = answer_now_system_prompt("research", context.language)
         user_prompt = str(prompts.get("user_template", "")).format(
             original=original,
             current_draft=labeled_block("Current Draft", partial),

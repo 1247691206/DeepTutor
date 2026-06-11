@@ -202,6 +202,7 @@ class VisualizeCapability(BaseCapability):
             join_chunks,
             labeled_block,
             load_answer_now_prompts,
+            answer_now_system_prompt,
             make_skip_notice,
             stream_synthesis,
         )
@@ -215,7 +216,7 @@ class VisualizeCapability(BaseCapability):
         )
 
         prompts = load_answer_now_prompts("visualize", context.language)
-        system_prompt = str(prompts.get("system", "")).strip()
+        system_prompt = answer_now_system_prompt("visualize", context.language)
         user_prompt = str(prompts.get("user_template", "")).format(
             original=original,
             render_mode=render_mode,

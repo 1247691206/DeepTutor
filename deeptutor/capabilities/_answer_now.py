@@ -41,6 +41,7 @@ from deeptutor.services.llm import (
     stream as llm_stream,
 )
 from deeptutor.services.prompt.manager import get_prompt_manager
+from deeptutor.services.prompt.oxca_brand import apply_student_guardrail
 
 # Per-event content cap. The trace can grow unbounded (especially for
 # deep_research / deep_solve with many tool calls) so we truncate each
@@ -254,7 +255,15 @@ def load_answer_now_prompts(module: str, language: str) -> dict[str, Any]:
     return get_prompt_manager().load_prompts(module, "answer_now", language)
 
 
+def answer_now_system_prompt(module: str, language: str) -> str:
+    """Load and white-label the answer-now system prompt for student output."""
+    prompts = load_answer_now_prompts(module, language)
+    raw = str(prompts.get("system", "")).strip()
+    return apply_student_guardrail(raw, language)
+
+
 __all__ = [
+    "answer_now_system_prompt",
     "build_answer_now_trace_metadata",
     "extract_answer_now_context",
     "format_trace_summary",

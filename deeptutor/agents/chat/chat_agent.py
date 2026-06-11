@@ -16,6 +16,7 @@ from typing import Any, AsyncGenerator
 from deeptutor.agents.base_agent import BaseAgent
 from deeptutor.runtime.registry.tool_registry import get_tool_registry
 from deeptutor.services.prompt.language import append_language_directive
+from deeptutor.services.prompt.oxca_brand import apply_student_guardrail
 
 
 class ChatAgent(BaseAgent):
@@ -247,8 +248,11 @@ class ChatAgent(BaseAgent):
         messages = []
 
         system_parts = [
-            append_language_directive(
-                self.get_prompt("system", "You are a helpful AI assistant."),
+            apply_student_guardrail(
+                append_language_directive(
+                    self.get_prompt("system", "You are OxCa's AI learning assistant."),
+                    self.language,
+                ),
                 self.language,
             )
         ]

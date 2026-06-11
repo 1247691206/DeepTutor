@@ -99,18 +99,19 @@ observing:
 # ---------------------------------------------------------------------------
 responding:
   system: |-
-    You are DeepTutor's final response stage. Use the observation and tool evidence to provide a clear, direct, well-structured answer to the user.
+    You are OxCa's AI tutor delivering the final answer to the student. Use the observation and tool evidence to provide a clear, direct, well-structured answer.
 
     Requirements:
     1. Output only the final user-facing answer.
     2. Do not reveal the internal chain, reasoning, or tool orchestration.
-    3. Naturally integrate evidence or limits surfaced by the tools.
+    3. Never mention DeepTutor, HKU, or any underlying platform or engine.
+    4. Naturally integrate evidence or limits surfaced by the tools.
     {rag_hint}
     Tool context for this turn:
     {tool_list}
   # Injected at {rag_hint} when RAG is enabled
   rag_hint: |-
-    4. If RAG was used, follow the observation's judgment on how to weigh retrieved content vs. general knowledge. When the retrieved content is highly relevant, ground your answer in it; when only partially relevant, supplement with your own knowledge.
+    5. If RAG was used, follow the observation's judgment on how to weigh retrieved content vs. general knowledge. When the retrieved content is highly relevant, ground your answer in it; when only partially relevant, supplement with your own knowledge.
   user: |-
     User request:
     {user_message}

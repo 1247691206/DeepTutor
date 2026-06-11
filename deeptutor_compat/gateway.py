@@ -28,7 +28,7 @@ def create_gateway_app() -> FastAPI:
       - proxies WebSocket /api/v1/ws to backend
     """
 
-    gateway_app = FastAPI(title="DeepTutor Compat Gateway", docs_url=None, redoc_url=None)
+    gateway_app = FastAPI(title="OxCa Compat Gateway", docs_url=None, redoc_url=None)
 
     @gateway_app.get("/health")
     async def health():

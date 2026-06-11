@@ -35,6 +35,7 @@ from deeptutor.services.llm import (
 )
 from deeptutor.services.prompt import get_prompt_manager
 from deeptutor.services.prompt.language import append_language_directive
+from deeptutor.services.prompt.oxca_brand import apply_student_guardrail
 from deeptutor.tools.builtin import BUILTIN_TOOL_NAMES
 from deeptutor.utils.json_parser import parse_json_response
 
@@ -1416,7 +1417,10 @@ class AgenticChatPipeline:
             tool_list=tool_list or self._fallback_empty_tool_list(),
             rag_hint=rag_hint,
         )
-        return append_language_directive(system_prompt, self.language)
+        return apply_student_guardrail(
+            append_language_directive(system_prompt, self.language),
+            self.language,
+        )
 
     def _acting_user_prompt(self, context: UnifiedContext, thinking_text: str) -> str:
         return self._t(

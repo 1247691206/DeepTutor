@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { login, fetchAuthStatus, checkIsFirstUser } from "@/lib/auth";
+import { PRODUCT_NAME, PRODUCT_TAGLINE } from "@/lib/product-brand";
 
 function LoginPageContent() {
   const router = useRouter();
@@ -51,7 +52,7 @@ function LoginPageContent() {
       {/* Logo / Title */}
       <div className="text-center mb-8">
         <h1 className="text-2xl font-semibold text-[var(--foreground)] tracking-tight">
-          DeepTutor
+          {PRODUCT_NAME}
         </h1>
         <p className="mt-1 text-sm text-[var(--muted-foreground)]">
           Sign in to your account
@@ -149,7 +150,7 @@ function LoginPageContent() {
       </p>
 
       <p className="mt-3 text-center text-xs text-[var(--muted-foreground)]">
-        DeepTutor · Agent-Native Learning
+        {PRODUCT_TAGLINE}
       </p>
     </div>
   );

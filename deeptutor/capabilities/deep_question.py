@@ -219,6 +219,7 @@ class DeepQuestionCapability(BaseCapability):
             join_chunks,
             labeled_block,
             load_answer_now_prompts,
+            answer_now_system_prompt,
             make_skip_notice,
             stream_synthesis,
         )
@@ -234,7 +235,7 @@ class DeepQuestionCapability(BaseCapability):
         question_type = str(overrides.get("question_type", "") or "auto")
 
         prompts = load_answer_now_prompts("question", context.language)
-        system_prompt = str(prompts.get("system", "")).strip()
+        system_prompt = answer_now_system_prompt("question", context.language)
         user_prompt = str(prompts.get("user_template", "")).format(
             topic=topic,
             num_questions=num_questions,

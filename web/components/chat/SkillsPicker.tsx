@@ -129,7 +129,7 @@ export default function SkillsPicker({
             </h2>
             <p className="mt-0.5 text-sm text-[var(--muted-foreground)]">
               {t(
-                "Pick Auto to let DeepTutor decide, or choose specific skills to apply.",
+                "Pick Auto to let OxCa decide, or choose specific skills to apply.",
               )}
             </p>
           </div>
