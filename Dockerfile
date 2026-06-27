@@ -200,7 +200,6 @@ nodaemon=true
 logfile=/dev/null
 logfile_maxbytes=0
 pidfile=/var/run/supervisord.pid
-user=root
 
 [program:backend]
 command=/bin/bash /app/start-backend.sh
@@ -359,18 +358,24 @@ echo "   - data/user/settings/main.yaml"
 echo "   - data/user/settings/agents.yaml"
 echo "============================================"
 
-# Run supervisord as root so it can open the container's stdout/stderr
-# (/dev/fd/1,2 — root-owned pipes under a rootful daemon like Docker Desktop)
-# and write its pidfile under /var/run. The backend and frontend programs are
-# dropped to the unprivileged deeptutor user (UID 1000) via `user=deeptutor`
-# in the supervisord config, so the app processes stay non-root.
+# Run supervisord with PID 1's UID — deliberately omitting `user=` from the
+# [supervisord] section so supervisord inherits whatever UID the container
+# started with (root under rootful Docker/Podman; UID 1000 under rootless
+# podman + userns_mode: keep-id, where PID 1 is the host user).
 #
-# Dropping supervisord ITSELF to UID 1000 here (the previous
-# `exec gosu deeptutor ...`) worked under rootless podman — where UID 1000 is
-# the mapped host user that owns those FDs — but under a rootful daemon it
-# could not open /dev/fd/1,2 ("making dispatchers ... EACCES") nor the pidfile,
-# so neither service ever started. Per-program `user=` keeps the children
-# unprivileged in both runtimes without that breakage.
+# Why no `user=root`: under rootless + keep-id, PID 1 is UID 1000 and has no
+# CAP_SETUID, so forcing `user=root` would make supervisord fail at startup
+# with "Error: Can't drop privilege as nonroot user" (see supervisord
+# options.py — it refuses to drop privileges when not running as root). The
+# previous design with `user=root` worked under rootful but broke rootless.
+#
+# The backend and frontend programs are still dropped to the unprivileged
+# deeptutor user (UID 1000) via per-program `user=deeptutor` in the
+# supervisord config — that setuid works because either (a) PID 1 is root
+# (rootful) and has CAP_SETUID, or (b) PID 1 is already UID 1000 (rootless
+# keep-id) and the setuid is a no-op. /dev/fd/1,2 ownership matches PID 1's
+# UID in both runtimes, so supervisord can write to them without an explicit
+# setuid dance.
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/deeptutor.conf
 EOF
 
@@ -440,7 +445,6 @@ nodaemon=true
 logfile=/dev/null
 logfile_maxbytes=0
 pidfile=/var/run/supervisord.pid
-user=root
 
 [program:backend]
 command=python -m uvicorn deeptutor.api.main:app --host 0.0.0.0 --port %(ENV_BACKEND_PORT)s --reload --no-access-log
