@@ -12,7 +12,9 @@ import { HeartHandshake, Loader2, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { listPartners, type PartnerInfo } from "@/lib/partners-api";
 import {
+  connectSubagent,
   listConnectablePartners,
+  listSubagentConnections,
   type ConnectablePartner,
 } from "@/lib/subagents-api";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
@@ -54,6 +56,51 @@ export default function PartnersPage() {
   const { isAdmin, loading: authLoading } = useAuthStatus();
   const [partners, setPartners] = useState<PartnerInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  // Clicking a partner card. An admin drills into the management page; a
+  // non-admin can't manage partners — for them a partner is consulted as a
+  // connected agent, so we reuse (or create) that partner's subagent
+  // connection and drop them straight into a fresh chat with it preselected.
+  const openPartner = useCallback(
+    async (partner: PartnerInfo) => {
+      if (isAdmin) {
+        router.push(`/partners/${partner.partner_id}`);
+        return;
+      }
+      setBusyId(partner.partner_id);
+      try {
+        const conns = await listSubagentConnections();
+        const existing = conns.find(
+          (c) =>
+            c.agent_kind === "partner" &&
+            c.partner_id === partner.partner_id,
+        );
+        let name = existing?.name;
+        if (!name) {
+          const taken = new Set(conns.map((c) => c.name));
+          const base = partner.name?.trim() || partner.partner_id;
+          let candidate = base;
+          for (let i = 2; taken.has(candidate); i++) candidate = `${base} (${i})`;
+          name = (
+            await connectSubagent({
+              name: candidate,
+              agent_kind: "partner",
+              partner_id: partner.partner_id,
+            })
+          ).name;
+        }
+        router.push(`/home?agent=${encodeURIComponent(name)}`);
+      } catch {
+        // Couldn't auto-connect (e.g. the name clashes with an existing KB) —
+        // fall back to My Agents, where the partner can be connected by hand.
+        router.push("/agents");
+      } finally {
+        setBusyId(null);
+      }
+    },
+    [isAdmin, router],
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -88,7 +135,7 @@ export default function PartnersPage() {
                   "Companions with their own soul, library, and channels — reachable from your IM apps.",
                 )
               : t(
-                  "Partners your administrator has assigned to you. Connect one under My Agents to consult it in chat.",
+                  "Partners your administrator has assigned to you. Click one to start chatting with it.",
                 )}
           </p>
         </div>
@@ -143,15 +190,9 @@ export default function PartnersPage() {
               <button
                 key={partner.partner_id}
                 type="button"
-                onClick={
-                  isAdmin
-                    ? () => router.push(`/partners/${partner.partner_id}`)
-                    : undefined
-                }
-                aria-disabled={!isAdmin}
-                className={`group flex items-start gap-3 rounded-2xl border border-[var(--border)] p-4 text-left transition-colors ${
-                  isAdmin ? "hover:border-[var(--ring)]" : "cursor-default"
-                }`}
+                onClick={() => void openPartner(partner)}
+                disabled={busyId === partner.partner_id}
+                className="group flex items-start gap-3 rounded-2xl border border-[var(--border)] p-4 text-left transition-colors hover:border-[var(--ring)] disabled:opacity-60"
               >
                 <PartnerAvatar
                   name={partner.name}
@@ -165,14 +206,18 @@ export default function PartnersPage() {
                     <span className="truncate text-[14px] font-medium text-[var(--foreground)]">
                       {partner.name}
                     </span>
-                    <span
-                      title={partner.running ? t("Running") : t("Stopped")}
-                      className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                        partner.running
-                          ? "bg-emerald-500"
-                          : "bg-[var(--border)]"
-                      }`}
-                    />
+                    {busyId === partner.partner_id ? (
+                      <Loader2 className="h-3 w-3 shrink-0 animate-spin text-[var(--muted-foreground)]" />
+                    ) : (
+                      <span
+                        title={partner.running ? t("Running") : t("Stopped")}
+                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                          partner.running
+                            ? "bg-emerald-500"
+                            : "bg-[var(--border)]"
+                        }`}
+                      />
+                    )}
                   </div>
                   {partner.description ? (
                     <p className="mt-0.5 line-clamp-2 text-[12px] leading-relaxed text-[var(--muted-foreground)]">

@@ -14,6 +14,7 @@ from pathlib import Path
 from llama_index.core import Settings, VectorStoreIndex
 from llama_index.core.embeddings import BaseEmbedding
 from llama_index.core.schema import ImageNode, TextNode
+import numpy as np
 import pytest
 
 from deeptutor.services.rag.pipelines.llamaindex import storage as storage_module
@@ -263,3 +264,62 @@ def test_storage_create_index_persists_faiss_end_to_end(tmp_path: Path) -> None:
     assert count == 1
     assert vector_store.detect_backend(storage_dir) == vector_store.BACKEND_FAISS
     assert storage_module.retrieve_nodes(storage_dir, "probe", top_k=1)
+
+
+def test_faiss_persist_and_load_survive_non_ascii_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Persist + load must work on a non-ASCII path (Windows fopen bug).
+
+    Only the *string-path* overload of ``faiss.write_index`` / ``read_index`` is
+    affected: it passes the path to C++ ``fopen``, which on Windows uses the
+    narrow ANSI API and cannot open non-ASCII paths (a Chinese KB name, a
+    ``C:\\Users\\张三`` home) — so index rebuilds crash. The in-memory
+    ``IOWriter`` overload that ``serialize_index`` uses is unaffected, which is
+    exactly why our store routes through it. The guards below mirror that
+    Windows semantics on any platform (fail only when handed a ``str`` path), so
+    this test fails if anything regresses to a path-based call.
+    """
+    real_write, real_read = faiss.write_index, faiss.read_index
+
+    def _guard_write(index: object, target: object, *args: object, **kwargs: object) -> object:
+        if isinstance(target, str):
+            raise RuntimeError("simulated Windows narrow-fopen failure on non-ASCII path")
+        return real_write(index, target, *args, **kwargs)
+
+    def _guard_read(source: object, *args: object, **kwargs: object) -> object:
+        if isinstance(source, str):
+            raise RuntimeError("simulated Windows narrow-fopen failure on non-ASCII path")
+        return real_read(source, *args, **kwargs)
+
+    monkeypatch.setattr(faiss, "write_index", _guard_write)
+    monkeypatch.setattr(faiss, "read_index", _guard_read)
+
+    # A Chinese KB-name segment plus a flat version dir, mirroring real layout.
+    storage_dir = tmp_path / "数学课程" / "version-1"
+    storage_dir.mkdir(parents=True)
+
+    _persist_faiss_index(storage_dir)  # write path: would raise via write_index
+    assert vector_store.detect_backend(storage_dir) == vector_store.BACKEND_FAISS
+
+    index = vector_store.load_index(storage_dir)  # read path: would raise via read_index
+    results = index.as_retriever(similarity_top_k=2).retrieve("probe")
+    assert [r.node.node_id for r in results] == ["gamma", "alpha"]
+
+
+def test_faiss_index_bytes_stay_cross_readable_with_stock_faiss(tmp_path: Path) -> None:
+    """Our serialize-based IO and stock path-based IO share one on-disk format.
+
+    Guarantees existing indexes (written by an older ``faiss.write_index``) stay
+    loadable, and new ones written by us stay readable by stock FAISS tooling.
+    """
+    idx = faiss.IndexFlatIP(_DIM)
+    idx.add(np.asarray([_VECTORS["alpha"], _VECTORS["beta"]], dtype="float32"))
+
+    ours = tmp_path / "ours.faiss"
+    vector_store.faiss_write_index(idx, str(ours))
+    assert faiss.read_index(str(ours)).ntotal == 2  # stock reader reads our bytes
+
+    stock = tmp_path / "stock.faiss"
+    faiss.write_index(idx, str(stock))
+    assert vector_store.faiss_read_index(str(stock)).ntotal == 2  # our reader reads stock bytes

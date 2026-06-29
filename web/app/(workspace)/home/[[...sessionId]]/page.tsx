@@ -339,6 +339,19 @@ export default function ChatPage() {
   } = useUnifiedChat();
 
   const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
+  // A connected agent to preselect once it loads, from `?agent=<name>` on the
+  // URL (the partner list page links here to drop straight into a chat with a
+  // partner). Captured once at first client render — the URL is rewritten to
+  // `/home/<sessionId>` as soon as the new session is created, dropping the
+  // query — so we can't read it later from the live search params.
+  const pendingAgentRef = useRef<string | null | undefined>(undefined);
+  if (pendingAgentRef.current === undefined) {
+    pendingAgentRef.current =
+      typeof window === "undefined"
+        ? null
+        : new URLSearchParams(window.location.search).get("agent");
+  }
+  const agentPreselectDoneRef = useRef(false);
   const [llmOptions, setLLMOptions] = useState<LLMOption[]>([]);
   const [activeLLMDefault, setActiveLLMDefault] = useState<LLMSelection | null>(
     null,
@@ -1610,6 +1623,15 @@ export default function ChatPage() {
     },
     [setKBs, state.knowledgeBases, agentNameSet],
   );
+  // Honor `?agent=<name>` once its connection KB has loaded: preselect it so a
+  // partner opened from the partner list starts the chat already targeting it.
+  useEffect(() => {
+    if (agentPreselectDoneRef.current) return;
+    const name = pendingAgentRef.current;
+    if (!name || !agentNameSet.has(name)) return;
+    agentPreselectDoneRef.current = true;
+    handleSelectAgent(name);
+  }, [agentNameSet, handleSelectAgent]);
   // How many times DeepTutor may consult the selected agent this turn. Seeded
   // from the configured default; the composer's stepper overrides it per turn
   // (sent in the request config, read by the subagent capability).
