@@ -33,6 +33,10 @@ system: |
     deeply, truly, mastered, expert, passionate, loves, hates, always,
     never, fully understands.
   - Slot focus: {focus}.
+  - PROHIBITED — never synthesize or restate anything about the user's mental
+    health, mood, emotions, stress, anxiety, wellbeing, personal or family
+    struggles, or any counselling-style disclosure. This is a learning profile
+    only; drop such material entirely.
   - Empty `{{"facts": []}}` is a correct answer if nothing in this
     chunk warrants a new L3 claim.
 

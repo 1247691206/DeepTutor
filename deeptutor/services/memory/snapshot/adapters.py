@@ -29,6 +29,22 @@ logger = logging.getLogger(__name__)
 # ── Helpers ──────────────────────────────────────────────────────────
 
 
+def _session_memory_excluded(preferences_json: object) -> bool:
+    """True when a session is flagged to stay out of memory/profile.
+
+    Set by turn_runtime for counselling-style skills (focus-coach). Failing
+    open would leak sensitive content, so any parse error is treated as
+    "not excluded" only for genuinely empty/missing preferences.
+    """
+    if not preferences_json:
+        return False
+    try:
+        prefs = json.loads(preferences_json)
+    except (TypeError, ValueError):
+        return False
+    return bool(isinstance(prefs, dict) and prefs.get("memory_excluded"))
+
+
 def _sha1(*parts: object) -> str:
     h = hashlib.sha1(usedforsecurity=False)
     for part in parts:
@@ -403,10 +419,16 @@ def read_chat_entities() -> list[Entity]:
         with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as conn:
             conn.row_factory = sqlite3.Row
             sessions = conn.execute(
-                "SELECT id, title, created_at, updated_at FROM sessions ORDER BY updated_at DESC"
+                "SELECT id, title, created_at, updated_at, preferences_json "
+                "FROM sessions ORDER BY updated_at DESC"
             ).fetchall()
             for sess in sessions:
                 sid = sess["id"]
+                # Counselling-style sessions (e.g. focus-coach) are flagged
+                # ``memory_excluded`` and must never feed the learning profile
+                # or long-term memory — skip them at the snapshot source.
+                if _session_memory_excluded(sess["preferences_json"]):
+                    continue
                 msgs = conn.execute(
                     "SELECT id, role, content, capability, created_at "
                     "FROM messages WHERE session_id = ? "

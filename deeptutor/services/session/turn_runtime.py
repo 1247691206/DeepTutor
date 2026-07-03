@@ -163,6 +163,20 @@ def _sanitize_session_title(raw: str) -> str:
     return text[:80]
 
 
+# Skills whose sessions carry sensitive, counselling-style content (emotional
+# support, wellbeing) that must never feed the learning profile / long-term
+# memory. Sessions that use any of these are flagged ``memory_excluded`` and
+# skipped by the memory snapshot (see services/memory/snapshot/adapters.py).
+MEMORY_EXCLUDED_SKILLS = frozenset({"focus-coach"})
+
+
+def _uses_memory_excluded_skill(payload: dict[str, Any]) -> bool:
+    skills = payload.get("skills") or []
+    if not isinstance(skills, list):
+        return False
+    return any(str(s).strip() in MEMORY_EXCLUDED_SKILLS for s in skills)
+
+
 def _extract_memory_references(payload: dict[str, Any]) -> list[MemoryReference]:
     """Return the L3 slot names the client opted in for this turn.
 
@@ -802,6 +816,11 @@ class TurnRuntimeManager:
         if persona_explicit:
             # Persist explicit set AND explicit clear ("" = back to Default).
             preference_update["persona"] = persona_pref
+        # Once a session touches a counselling-style skill (focus-coach), keep
+        # it flagged for the whole session so its transcript never enters the
+        # memory/profile snapshot. Sticky: never clear the flag on later turns.
+        if _uses_memory_excluded_skill(payload) or preferences.get("memory_excluded"):
+            preference_update["memory_excluded"] = True
         await self.store.update_session_preferences(session["id"], preference_update)
         turn = await self.store.create_turn(session["id"], capability=capability)
         execution = _TurnExecution(
@@ -1385,14 +1404,25 @@ class TurnRuntimeManager:
                     ).load_for_context(requested_persona)
             active_persona = requested_persona if persona_context else ""
 
-            # Skills: never user-selected per turn. The model sees a
-            # one-line manifest of every skill visible to this user (own +
-            # builtin, plus admin-assigned for non-admin users) and pulls
-            # full content on demand via ``read_skill``. ``always`` skills
-            # are the exception — their bodies are injected eagerly.
+            # Skills: the model sees a one-line manifest of every skill visible
+            # to this user (own + builtin, plus admin-assigned for non-admin
+            # users) and pulls full content on demand via ``read_skill``. Two
+            # exceptions get their bodies injected eagerly: ``always: true``
+            # skills, and skills explicitly requested for this turn via the
+            # payload ``skills`` field (e.g. the practice page pins
+            # ``answer-coach`` so the coaching playbook applies without relying
+            # on the model choosing to call ``read_skill`` first).
+            requested_skills = [
+                str(s).strip() for s in (payload.get("skills") or []) if str(s).strip()
+            ]
             user_skill_service = get_skill_service()
             skill_entries = user_skill_service.summary_entries()
-            always_blocks = [user_skill_service.load_always_for_context()]
+            own_names = {e.name for e in skill_entries}
+            own_eager = [e.name for e in skill_entries if e.always and e.available]
+            own_eager += [
+                n for n in requested_skills if n in own_names and n not in own_eager
+            ]
+            always_blocks = [user_skill_service.load_for_context(own_eager)]
             if not current_user.is_admin:
                 assigned_service = SkillService(
                     root=get_admin_path_service().get_workspace_dir() / "skills",
@@ -1403,11 +1433,15 @@ class TurnRuntimeManager:
                     e for e in assigned_service.summary_entries() if e.name in allowed_skills
                 ]
                 skill_entries = skill_entries + assigned_entries
-                always_blocks.append(
-                    assigned_service.load_for_context(
-                        [e.name for e in assigned_entries if e.always and e.available]
-                    )
-                )
+                assigned_eager = [
+                    e.name for e in assigned_entries if e.always and e.available
+                ]
+                assigned_eager += [
+                    n
+                    for n in requested_skills
+                    if n in allowed_skills and n not in assigned_eager
+                ]
+                always_blocks.append(assigned_service.load_for_context(assigned_eager))
             skills_manifest = "\n\n".join(
                 part for part in (*always_blocks, render_skills_manifest(skill_entries)) if part
             )

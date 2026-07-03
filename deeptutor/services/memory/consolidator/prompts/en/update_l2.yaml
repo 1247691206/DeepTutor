@@ -28,6 +28,10 @@ system: |
     deeply, truly, mastered, expert, passionate, loves, hates, always,
     never, fully understands.
   - Surface focus: {focus}.
+  - PROHIBITED — never extract, infer, or restate anything about the user's
+    mental health, mood, emotions, stress, anxiety, wellbeing, personal or
+    family struggles, or any counselling-style disclosure. This is a learning
+    profile only. If a chunk is mostly such content, emit `{{"facts": []}}`.
   - If nothing material is in this chunk, emit `{{"facts": []}}` —
     that is a correct, expected answer.
 
