@@ -342,7 +342,8 @@ class MemoryService:
                 f"如果无需修改，请只返回 {_NO_CHANGE}。",
                 "如果需要更新，请重写用户画像，可使用以下标题：\n"
                 "## Identity\n## Learning Style\n## Knowledge Level\n## Preferences\n\n"
-                "规则：保持简短，删除过时内容，不要记录临时对话。\n\n"
+                "规则：保持简短，删除过时内容，不要记录临时对话。"
+                "不要写入心理咨询、情绪倾诉、压力/焦虑等心理健康内容。\n\n"
                 f"[当前画像]\n{current or '(empty)'}\n\n"
                 f"[新增材料]\n{source}",
             )
@@ -352,7 +353,9 @@ class MemoryService:
             f"If nothing should change, return exactly {_NO_CHANGE}.",
             "Rewrite the user profile if needed. Suggested sections:\n"
             "## Identity\n## Learning Style\n## Knowledge Level\n## Preferences\n\n"
-            "Rules: keep it short, remove stale items, no transient chatter.\n\n"
+            "Rules: keep it short, remove stale items, no transient chatter. "
+            "Never include psychological counseling, emotional wellbeing sessions, "
+            "stress/anxiety notes, or private feelings.\n\n"
             f"[Current profile]\n{current or '(empty)'}\n\n"
             f"[New material]\n{source}",
         )
@@ -365,7 +368,8 @@ class MemoryService:
                 f"如果无需修改，请只返回 {_NO_CHANGE}。",
                 "如果需要更新，请重写学习旅程摘要，可使用以下标题：\n"
                 "## Current Focus\n## Accomplishments\n## Open Questions\n\n"
-                "规则：保持简短，删除已完成或过时的条目。\n\n"
+                "规则：保持简短，删除已完成或过时的条目。"
+                "不要写入心理咨询或情绪支持类对话，只记录学业学习进展。\n\n"
                 f"[当前摘要]\n{current or '(empty)'}\n\n"
                 f"[新增材料]\n{source}",
             )
@@ -375,7 +379,9 @@ class MemoryService:
             f"If nothing should change, return exactly {_NO_CHANGE}.",
             "Rewrite the learning summary if needed. Suggested sections:\n"
             "## Current Focus\n## Accomplishments\n## Open Questions\n\n"
-            "Rules: keep it short, remove completed/stale items.\n\n"
+            "Rules: keep it short, remove completed/stale items. "
+            "Never include psychological counseling or emotional wellbeing sessions — "
+            "academic learning progress only.\n\n"
             f"[Current summary]\n{current or '(empty)'}\n\n"
             f"[New material]\n{source}",
         )

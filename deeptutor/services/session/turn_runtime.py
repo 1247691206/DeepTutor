@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 MemoryReference = Literal["summary", "profile"]
 
+# Wellbeing / focus-coach turns must not update shared learning memory files.
+_WELLBEING_MEMORY_SKIP_SKILLS = frozenset({"focus-coach"})
+
 
 def _should_capture_assistant_content(event: StreamEvent) -> bool:
     if event.type != StreamEventType.CONTENT:
@@ -1063,7 +1066,9 @@ class TurnRuntimeManager:
                 events=assistant_events,
             )
             await self.store.update_turn_status(turn_id, "completed")
-            if not is_regenerate:
+            if not is_regenerate and not (
+                set(resolved_skills) & _WELLBEING_MEMORY_SKIP_SKILLS
+            ):
                 try:
                     await memory_service.refresh_from_turn(
                         user_message=raw_user_content,
