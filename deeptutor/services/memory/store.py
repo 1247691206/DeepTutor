@@ -312,7 +312,59 @@ def migrate_v1_if_needed() -> Path | None:
         except OSError:
             logger.warning("v1 memory migration: failed to move %s", item, exc_info=True)
     logger.info("v1 memory migrated to %s", backup_dir)
+    # Seed L3 slots so Oxca's two-file profile API keeps working.
+    restore_v1_backup_into_l3(backup_dir)
     return backup_dir
+
+
+def restore_v1_backup_into_l3(backup_dir: Path | None = None) -> bool:
+    """Copy v1 PROFILE/SUMMARY from a backup dir into L3 profile/recent.
+
+    Used after migrate_v1 and by the Oxca legacy ``GET /api/v1/memory`` shim
+    when L3 slots are still empty. Idempotent: never overwrites non-empty L3.
+    """
+    paths.ensure_dirs()
+    profile_path = paths.l3_file("profile")
+    recent_path = paths.l3_file("recent")
+    need_profile = not profile_path.exists() or not profile_path.read_text(encoding="utf-8").strip()
+    need_recent = not recent_path.exists() or not recent_path.read_text(encoding="utf-8").strip()
+    if not need_profile and not need_recent:
+        return False
+
+    if backup_dir is None:
+        root = paths.backup_root()
+        if not root.is_dir():
+            return False
+        candidates = sorted(
+            (p for p in root.iterdir() if p.is_dir()),
+            key=lambda p: p.name,
+            reverse=True,
+        )
+        backup_dir = next(
+            (
+                p
+                for p in candidates
+                if (p / "PROFILE.md").exists() or (p / "SUMMARY.md").exists()
+            ),
+            None,
+        )
+    if backup_dir is None:
+        return False
+
+    wrote = False
+    if need_profile:
+        src = backup_dir / "PROFILE.md"
+        if src.exists():
+            profile_path.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+            wrote = True
+    if need_recent:
+        src = backup_dir / "SUMMARY.md"
+        if src.exists():
+            recent_path.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+            wrote = True
+    if wrote:
+        logger.info("Restored v1 PROFILE/SUMMARY into L3 from %s", backup_dir)
+    return wrote
 
 
 def migrate_partner_surface_if_needed() -> bool:

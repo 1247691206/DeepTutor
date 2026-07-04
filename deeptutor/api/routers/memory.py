@@ -47,6 +47,7 @@ from deeptutor.services.memory import (
     get_memory_store,
     paths,
 )
+from deeptutor.services.memory.store import restore_v1_backup_into_l3
 
 _ENTRY_ID_RE = re.compile(r"^m_[0-9A-HJKMNP-TV-Z]{26}$")
 
@@ -54,6 +55,55 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 Layer = Literal["L2", "L3"]
+
+# Oxca / legacy two-file memory API maps onto L3 slots.
+_LEGACY_FILE_TO_L3 = {"profile": "profile", "summary": "recent"}
+
+
+# ── Oxca legacy two-file API (profile + summary) ─────────────────────────
+
+
+def _file_updated_at(slot: str) -> str | None:
+    path = paths.l3_file(slot)  # type: ignore[arg-type]
+    if not path.exists():
+        return None
+    try:
+        from datetime import datetime, timezone
+
+        return datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).isoformat()
+    except OSError:
+        return None
+
+
+def _legacy_snap_dict() -> dict:
+    restore_v1_backup_into_l3()
+    store = get_memory_store()
+    return {
+        "profile": store.read_raw("L3", "profile"),
+        "summary": store.read_raw("L3", "recent"),
+        "profile_updated_at": _file_updated_at("profile"),
+        "summary_updated_at": _file_updated_at("recent"),
+    }
+
+
+class LegacyFileUpdateRequest(BaseModel):
+    file: Literal["profile", "summary"]
+    content: str = ""
+
+
+@router.get("")
+async def get_memory_legacy():
+    """Two-file snapshot used by Oxca Profile / Tutor memory injection."""
+    return _legacy_snap_dict()
+
+
+@router.put("")
+async def update_memory_legacy(payload: LegacyFileUpdateRequest):
+    slot = _LEGACY_FILE_TO_L3.get(payload.file)
+    if not slot:
+        raise HTTPException(status_code=400, detail=f"Invalid file: {payload.file}")
+    await get_memory_store().overwrite_doc("L3", slot, payload.content)
+    return {**_legacy_snap_dict(), "saved": True}
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────
