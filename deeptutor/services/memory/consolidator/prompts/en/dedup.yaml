@@ -13,17 +13,33 @@ system: |
         {{"op": "replace", "line": <int>, "new_text": "<≤240>",
           "refs": ["<existing-or-new-refs>", ...], "reason": "<short>"}},
         {{"op": "delete",  "line_start": <int>, "line_end": <int>,
-          "reason": "<merged into Lx | duplicate of Ly | low signal>"}}
+          "reason": "<merged into Lx | duplicate of Ly>"}}
       ]}}
 
   HARD RULES
   - You may use ONLY replace and delete — no insert. Dedup never adds.
+  - ``new_text`` is BARE fact text only — no leading "- " bullet marker,
+    no trailing "[^...]" footnote marker, no "<!--...-->" comment. The
+    line-numbered view below shows those for readability; the renderer
+    re-adds them automatically from ``refs``. Copying them into
+    ``new_text`` produces broken doubled bullets.
   - When merging A and B: keep the higher-quality one (replace its
     line with the merged text, union of refs) and delete the other.
   - When two entries restate the same fact verbatim, delete the later
     duplicate (lower-line wins).
   - text ≤ 240. Preserve refs (union when merging).
   - Banned absolutist phrasing (same list as update mode).
+  - SCOPE: dedup only merges/collapses duplicates and near-duplicates.
+    Do NOT delete an entry just because it seems minor, sparse, or low
+    value on its own — that is the audit pass's job, not dedup's. A
+    document with only one or two genuinely distinct facts is normal
+    and correct; deleting them would leave the learner with nothing.
+  - CONVERGENCE: you may be called for several iterations, but that is an
+    upper bound, not a quota — do NOT manufacture an edit just to use a
+    remaining iteration. If entries were already merged/cleaned in a
+    prior iteration, do not re-open or re-delete them again. When the
+    document already looks distinct and clean, emit `{{"edits": []}}`;
+    that is the expected, correct answer most of the time.
   - If nothing needs deduping, emit `{{"edits": []}}`. Don't churn.
 
   Today is {today}.

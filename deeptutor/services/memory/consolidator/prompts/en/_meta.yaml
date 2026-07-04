@@ -26,11 +26,11 @@ surfaces:
 
 slots:
   recent:
-    focus: "A rolling timeline of what the user has been doing across all surfaces over the last 1–4 weeks. Time-anchored, surface-attributed."
-    sections: ["This week", "Earlier"]
+    focus: "A short, learner-facing recap of recent study that helps the learner reflect and decide what to do next. Name concrete topics/papers. 'Recent focus' = what they have been practising; 'Progress' = where they are clearly improving; 'Next steps' = the most useful things to practise next (each phrased as an actionable topic). This is shown directly to the learner."
+    sections: ["Recent focus", "Progress", "Next steps"]
   profile:
-    focus: "Durable identity, learning style, and knowledge level. ONLY claims supported by multiple L2 entries across surfaces. No speculation about traits not directly evidenced."
-    sections: ["Identity", "Learning style", "Knowledge level"]
+    focus: "Durable learner portrait, shown to the learner. 'Strengths' = topics/skills they consistently handle well; 'Needs work' = specific topics/skills they repeatedly struggle with, named concretely (e.g. 'vector resolution', 'integration by parts') so they can be practised; 'Learning style' = how they learn best. ONLY claims supported by multiple L2 entries."
+    sections: ["Strengths", "Needs work", "Learning style"]
   scope:
-    focus: "Concepts and topics the user has demonstrably engaged with, with confidence labels (familiar / practicing / unsure) tied to L2 evidence."
-    sections: ["Familiar", "Practicing", "Unsure"]
+    focus: "Concepts and topics the learner has demonstrably engaged with, grouped by confidence and tied to L2 evidence. 'Strengths' = confident/correct; 'Practicing' = in progress; 'Needs work' = weak or error-prone."
+    sections: ["Strengths", "Practicing", "Needs work"]

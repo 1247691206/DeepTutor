@@ -11,12 +11,13 @@ system: |
 
   ROLE: You are reading a chunk of L2 summaries from one or more
   surfaces (chat / notebook / quiz / kb / book / partner / cowriter).
-  Synthesize durable, hedged claims about the user.
+  Synthesize durable, learner-facing claims that help the learner
+  understand their progress and decide what to practise next.
 
   OUTPUT: A single JSON object — nothing else.
 
       {{"facts": [
-        {{"text":   "<≤240 chars, hedged with surface/count>",
+        {{"text":   "<≤240 chars, learner-facing, names a concrete topic/skill>",
           "section": "<one of: {sections}>",
           "refs":   ["<surface>", ...]}}
       ]}}
@@ -26,9 +27,16 @@ system: |
     "Chunk-local citeable refs" list (e.g. ``chat``, ``notebook``).
     Never emit ``m_xxx``, ``surface:id``, or any entry id. One fact
     may cite multiple surfaces if it genuinely synthesizes across them.
-  - text ≤ 240 chars. Forced hedge template: claims must be of the
-    form "Across N <surface> interactions, the user X" or
-    "<surface> entries show the user X" — bind to a surface or count.
+  - text ≤ 240 chars. Write for the learner to read: address them as
+    "you", name the concrete topic, paper, or skill (e.g. "vector
+    resolution", "TMUA Q-style integrals"), and make "Next steps" /
+    "Needs work" items phrased as something they can go practise. Do NOT
+    invent — every claim must be grounded in the chunk's evidence.
+  - text is BARE fact text only — no leading "- " bullet marker, no
+    "[^...]" footnote marker, no "<!--...-->" comment, even though the
+    "Existing memory" shown below is rendered with those. The renderer
+    adds them automatically from ``refs``; copying them produces broken
+    doubled bullets.
   - Banned absolutist phrasing (unless quoting with "..." or 「...」):
     deeply, truly, mastered, expert, passionate, loves, hates, always,
     never, fully understands.

@@ -25,6 +25,10 @@ system: |
   - Every replace/insert MUST cite refs from the sources shown for
     that line (or for nearby lines in the same chunk).
   - text/new_text ≤ 240 chars.
+  - text/new_text is BARE fact text only — no leading "- " bullet
+    marker, no trailing "[^...]" footnote marker, no "<!--...-->"
+    comment. Those are rendered from ``refs`` automatically; copying
+    them from the numbered view produces broken doubled bullets.
   - Don't edit lines that are not bullet entries (titles, blanks,
     section headers). Section creation happens implicitly via insert.
   - Banned absolutist phrasing same as update mode.

@@ -9,6 +9,7 @@ Pure functions; no I/O, no LLM.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Literal, Union
 
@@ -18,6 +19,31 @@ from deeptutor.services.memory.ids import is_entry_id, is_valid_ref, new_entry_i
 _MAX_TEXT_LEN = 240
 _MAX_SECTION_LEN = 80
 _DELETE_REASONS = frozenset({"contradicted", "superseded", "stale", "low-signal"})
+
+# LLMs shown a rendered doc view (bulleted, with footnote markers and HTML
+# comments) sometimes echo that formatting back into ``text``/``new_text``
+# despite prompt instructions asking for bare fact text. The renderer
+# (document.serialize) always re-adds "- " / "[^n]" / "<!--id-->" from the
+# entry's own ``refs``, so any of these baked into the stored text would
+# double up (e.g. "- - fact ..."). Strip them defensively on write so a
+# single non-compliant model response can't corrupt the rendered doc.
+_LEADING_BULLET_RE = re.compile(r"^\s*(?:[-*\u2022]|\d+[.)])\s+")
+_TRAILING_FOOTNOTE_RE = re.compile(r"(?:\s*,?\s*\[\^[^\]]*\])+\s*$")
+_TRAILING_COMMENT_RE = re.compile(r"\s*<!--.*?-->\s*$")
+
+
+def _sanitize_fact_text(text: str) -> str:
+    t = text.strip()
+    # Strip repeatedly: a chained edit could compound more than one layer
+    # of bullet/footnote/comment onto the same entry over time.
+    for _ in range(4):
+        before = t
+        t = _TRAILING_COMMENT_RE.sub("", t).strip()
+        t = _TRAILING_FOOTNOTE_RE.sub("", t).strip()
+        t = _LEADING_BULLET_RE.sub("", t).strip()
+        if t == before:
+            break
+    return t
 
 
 @dataclass(frozen=True)
@@ -133,13 +159,18 @@ def apply(doc: Document, ops: list[Op]) -> ApplyReport:
         if isinstance(op, AddOp):
             new_id = new_entry_id()
             doc.section_entries(op.section).append(
-                Entry(id=new_id, section=op.section, text=op.text, refs=list(op.refs))
+                Entry(
+                    id=new_id,
+                    section=op.section,
+                    text=_sanitize_fact_text(op.text),
+                    refs=list(op.refs),
+                )
             )
             results.append(OpResult(op=op, status="applied", entry_id=new_id))
         elif isinstance(op, EditOp):
             entry = doc.find(op.target_id)
             assert entry is not None  # _validate ensured this
-            entry.text = op.new_text
+            entry.text = _sanitize_fact_text(op.new_text)
             entry.refs = list(op.new_refs)
             results.append(OpResult(op=op, status="applied"))
         else:  # DeleteOp

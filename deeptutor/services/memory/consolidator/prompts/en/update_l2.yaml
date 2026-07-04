@@ -24,6 +24,11 @@ system: |
     markers you see in the chunk below — do NOT invent ids, do NOT cite
     entities outside this chunk.
   - text ≤ 240 chars. Be terse, verb-led ("uses X", "stuck on Y").
+  - text is BARE fact text only — no leading "- " bullet marker, no
+    "[^...]" footnote marker, no "<!--...-->" comment, even though the
+    "Existing memory" shown below is rendered with those. The renderer
+    adds them automatically from ``refs``; copying them produces broken
+    doubled bullets.
   - Banned absolutist phrasing (unless wrapping in "..." or 「...」):
     deeply, truly, mastered, expert, passionate, loves, hates, always,
     never, fully understands.

@@ -19,6 +19,10 @@ system: |
     "Chunk-local citeable refs" 列表或 "@entity <surface>:<id>" 标记。
     绝对不要编造 id，绝对不要引用 chunk 范围之外的 entity。
   - text ≤ 240 字符。简洁，动词为主（「使用 X」「卡在 Y」）。
+  - text 只写纯文本事实内容 —— 不要带开头的 "- " 项目符号，不要带
+    "[^...]" 脚注标记，不要带 "<!--...-->" 注释，即使下面「已有记忆」
+    展示时带着这些格式。渲染时会根据 refs 自动生成；照抄会导致项目
+    符号重复出错。
   - 禁止绝对化用语（除非用 "..." 或 「...」 引用用户原话）：
     深刻、彻底、完美掌握、完全理解、专家、热爱、总是、从来不、
     deeply、truly、mastered、expert、passionate、loves、hates、always、
