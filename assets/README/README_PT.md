@@ -361,7 +361,7 @@ Cada partner tem um `SOUL.md`, seleção de modelo, canais, política de ferrame
 <img src="../../assets/figs/web-1.4.6+/partners/02-IM%20config%20for%20each%20partner.png" alt="Configuração de canal IM por partner" width="900">
 </div>
 
-A camada de canais é orientada por esquema e pode ligar-se a plataformas IM como Feishu, Telegram, Slack, Discord, DingTalk, QQ/NapCat, WeCom, WhatsApp, Zulip, Matrix, Mochat e Microsoft Teams dependendo dos extras instalados e das credenciais configuradas. Um partner também pode ser conectado como subagente e consultado a partir de um turno de chat normal — veja **Meus Agentes** abaixo.
+A camada de canais é orientada por esquema e pode ligar-se a plataformas IM como Feishu, Telegram, Slack, Discord, DingTalk, QQ/NapCat, WeCom, WhatsApp, Zulip, Mattermost, Matrix, Mochat e Microsoft Teams dependendo dos extras instalados e das credenciais configuradas. Um partner também pode ser conectado como subagente e consultado a partir de um turno de chat normal — veja **Meus Agentes** abaixo.
 
 </details>
 
@@ -503,7 +503,7 @@ data/
 
 O **primeiro utilizador registado torna-se administrador** e possui catálogos de modelos, credenciais de provedores, bases de conhecimento partilhadas, skills e concessões por utilizador. Os restantes obtêm um espaço de trabalho isolado e uma página de Settings editada — modelos, KBs e skills atribuídos pelo administrador aparecem como opções com âmbito somente leitura, nunca como chaves API brutas.
 
-**Ativar:** ligue a autenticação em `data/user/settings/auth.json`, reinicie `deeptutor start`, registe o primeiro administrador em `/register`, depois adicione utilizadores em `/admin/users` e atribua modelos, KBs, skills, política de ferramentas/MCP e acesso de execução de código através de concessões.
+**Ativar:** ligue a autenticação em `data/user/settings/auth.json`, reinicie `deeptutor start`, registe o primeiro administrador em `/register`, depois adicione utilizadores em `/admin/users` e atribua modelos, KBs, skills, Partners, política de ferramentas/MCP e acesso de execução de código através de concessões.
 
 > O PocketBase continua a ser uma integração de utilizador único — mantenha `integrations.pocketbase_url` em branco para implementações multi-utilizador a menos que tenha ligado um armazém de utilizadores externo.
 

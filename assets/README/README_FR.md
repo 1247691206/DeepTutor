@@ -371,7 +371,7 @@ Chaque partner a un `SOUL.md`, une sélection de modèle, des canaux, une politi
 <img src="../../assets/figs/web-1.4.6+/partners/02-IM%20config%20for%20each%20partner.png" alt="Configuration du canal IM par partner" width="900">
 </div>
 
-La couche de canaux est pilotée par schéma et peut se connecter à des plateformes IM telles que Feishu, Telegram, Slack, Discord, DingTalk, QQ/NapCat, WeCom, WhatsApp, Zulip, Matrix, Mochat et Microsoft Teams selon les extras installés et les identifiants configurés. Un partner peut également être connecté comme sous-agent et consulté depuis un tour de chat normal — voir **My Agents** ci-dessous.
+La couche de canaux est pilotée par schéma et peut se connecter à des plateformes IM telles que Feishu, Telegram, Slack, Discord, DingTalk, QQ/NapCat, WeCom, WhatsApp, Zulip, Mattermost, Matrix, Mochat et Microsoft Teams selon les extras installés et les identifiants configurés. Un partner peut également être connecté comme sous-agent et consulté depuis un tour de chat normal — voir **My Agents** ci-dessous.
 
 </details>
 
@@ -513,7 +513,7 @@ data/
 
 Le **premier utilisateur enregistré devient admin** et possède les catalogues de modèles, les identifiants de fournisseur, les bases de connaissances partagées, les compétences et les attributions per-utilisateur. Tous les autres obtiennent un espace de travail isolé et une page Settings expurgée — les modèles, KB et compétences assignés par l'admin apparaissent comme des options à portée, en lecture seule, jamais comme des clés d'API brutes.
 
-**Activer :** activez l'auth dans `data/user/settings/auth.json`, redémarrez `deeptutor start`, enregistrez le premier admin sur `/register`, puis ajoutez des utilisateurs depuis `/admin/users` et assignez des modèles, KB, compétences, politique d'outils/MCP et accès à l'exécution de code via des attributions.
+**Activer :** activez l'auth dans `data/user/settings/auth.json`, redémarrez `deeptutor start`, enregistrez le premier admin sur `/register`, puis ajoutez des utilisateurs depuis `/admin/users` et assignez des modèles, KB, compétences, Partners, politique d'outils/MCP et accès à l'exécution de code via des attributions.
 
 > PocketBase reste une intégration mono-utilisateur — gardez `integrations.pocketbase_url` vide pour les déploiements multi-utilisateur sauf si vous avez configuré un store utilisateur externe.
 

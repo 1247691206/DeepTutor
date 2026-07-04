@@ -349,7 +349,7 @@ Partners अपनी soul, model policy, library, memory, और channels व�
 <img src="../../assets/figs/web-1.4.6+/partners/02-IM%20config%20for%20each%20partner.png" alt="प्रत्येक partner के लिए per-partner IM channel configuration" width="900">
 </div>
 
-Channel layer schema-driven है और installed extras और configured credentials के आधार पर Feishu, Telegram, Slack, Discord, DingTalk, QQ/NapCat, WeCom, WhatsApp, Zulip, Matrix, Mochat, और Microsoft Teams जैसे IM platforms से connect हो सकती है। एक partner को subagent के रूप में भी connect किया जा सकता है और normal chat turn से consult किया जा सकता है — नीचे **My Agents** देखें।
+Channel layer schema-driven है और installed extras और configured credentials के आधार पर Feishu, Telegram, Slack, Discord, DingTalk, QQ/NapCat, WeCom, WhatsApp, Zulip, Mattermost, Matrix, Mochat, और Microsoft Teams जैसे IM platforms से connect हो सकती है। एक partner को subagent के रूप में भी connect किया जा सकता है और normal chat turn से consult किया जा सकता है — नीचे **My Agents** देखें।
 
 </details>
 
@@ -491,7 +491,7 @@ data/
 
 **पहला registered user admin बनता है** और model catalogs, provider credentials, shared knowledge bases, skills, और per-user grants own करता है। बाकी सभी को isolated workspace और redacted Settings page मिलती है — admin-assigned models, KBs, और skills scoped, read-only options के रूप में दिखाई देते हैं, कभी raw API keys के रूप में नहीं।
 
-**Enable करें:** `data/user/settings/auth.json` में auth on करें, `deeptutor start` restart करें, `/register` पर पहला admin register करें, फिर `/admin/users` से users add करें और grants के जरिए models, KBs, skills, tool/MCP policy, और code-execution access assign करें।
+**Enable करें:** `data/user/settings/auth.json` में auth on करें, `deeptutor start` restart करें, `/register` पर पहला admin register करें, फिर `/admin/users` से users add करें और grants के जरिए models, KBs, skills, Partners, tool/MCP policy, और code-execution access assign करें।
 
 > PocketBase single-user integration रहता है — multi-user deployments के लिए `integrations.pocketbase_url` blank रखें जब तक आपने external user store wire up नहीं किया हो।
 

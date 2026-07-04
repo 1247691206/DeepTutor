@@ -349,7 +349,7 @@ Partnersは独自のソウル、モデルポリシー、ライブラリ、メモ
 <img src="../../assets/figs/web-1.4.6+/partners/02-IM%20config%20for%20each%20partner.png" alt="Partner ごとのIMチャンネル設定" width="900">
 </div>
 
-チャンネル層はスキーマ駆動で、インストール済みエクストラと設定された認証情報に応じて、Feishu、Telegram、Slack、Discord、DingTalk、QQ/NapCat、WeCom、WhatsApp、Zulip、Matrix、Mochat、Microsoft Teamsなどのプラットフォームに接続できます。PartnerはサブエージェントとしてMy Agentsに接続でき、通常のチャットターンから相談できます。詳細は以下の**My Agents**を参照してください。
+チャンネル層はスキーマ駆動で、インストール済みエクストラと設定された認証情報に応じて、Feishu、Telegram、Slack、Discord、DingTalk、QQ/NapCat、WeCom、WhatsApp、Zulip、Mattermost、Matrix、Mochat、Microsoft Teamsなどのプラットフォームに接続できます。PartnerはサブエージェントとしてMy Agentsに接続でき、通常のチャットターンから相談できます。詳細は以下の**My Agents**を参照してください。
 
 </details>
 
@@ -491,7 +491,7 @@ data/
 
 **最初に登録したユーザーが管理者**になり、モデルカタログ、プロバイダー認証情報、共有知識ベース、スキル、ユーザー単位グラントを所有します。それ以外のユーザーは分離されたワークスペースと編集されたSettingsページを取得します — 管理者が割り当てたモデル、KB、スキルはスコープ付きの読み取り専用オプションとして表示され、生のAPIキーは見えません。
 
-**有効化：** `data/user/settings/auth.json`で認証をオンにし、`deeptutor start`を再起動し、`/register`で最初の管理者を登録し、`/admin/users`からユーザーを追加し、グラントを通じてモデル、KB、スキル、ツール/MCPポリシー、コード実行アクセスを割り当てます。
+**有効化：** `data/user/settings/auth.json`で認証をオンにし、`deeptutor start`を再起動し、`/register`で最初の管理者を登録し、`/admin/users`からユーザーを追加し、グラントを通じてモデル、KB、スキル、Partner、ツール/MCPポリシー、コード実行アクセスを割り当てます。
 
 > PocketBaseはシングルユーザー統合のままです — 外部ユーザーストアを組み込まない限り、マルチユーザーデプロイメントでは`integrations.pocketbase_url`を空白にしてください。
 

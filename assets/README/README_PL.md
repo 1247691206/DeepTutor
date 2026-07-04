@@ -349,7 +349,7 @@ Każdy partner ma `SOUL.md`, wybór modelu, kanały, politykę narzędzi i przyp
 <img src="../../assets/figs/web-1.4.6+/partners/02-IM%20config%20for%20each%20partner.png" alt="Konfiguracja kanału IM per partner" width="900">
 </div>
 
-Warstwa kanałów jest sterowana schematem i może łączyć się z platformami IM takimi jak Feishu, Telegram, Slack, Discord, DingTalk, QQ/NapCat, WeCom, WhatsApp, Zulip, Matrix, Mochat i Microsoft Teams w zależności od zainstalowanych dodatków i skonfigurowanych danych uwierzytelniających. Partner może być również podłączony jako subagent i konsultowany z normalnej tury czatu — patrz **My Agents** poniżej.
+Warstwa kanałów jest sterowana schematem i może łączyć się z platformami IM takimi jak Feishu, Telegram, Slack, Discord, DingTalk, QQ/NapCat, WeCom, WhatsApp, Zulip, Mattermost, Matrix, Mochat i Microsoft Teams w zależności od zainstalowanych dodatków i skonfigurowanych danych uwierzytelniających. Partner może być również podłączony jako subagent i konsultowany z normalnej tury czatu — patrz **My Agents** poniżej.
 
 </details>
 
@@ -491,7 +491,7 @@ data/
 
 **Pierwszy zarejestrowany użytkownik staje się administratorem** i jest właścicielem katalogów modeli, danych uwierzytelniających dostawców, współdzielonych baz wiedzy, umiejętności i uprawnień per-użytkownik. Wszyscy pozostali otrzymują izolowany obszar roboczy i zredagowaną stronę Settings — przypisane przez administratora modele, KB i umiejętności pojawiają się jako ograniczone, tylko do odczytu opcje, nigdy jako surowe klucze API.
 
-**Włącz:** włącz uwierzytelnianie w `data/user/settings/auth.json`, uruchom ponownie `deeptutor start`, zarejestruj pierwszego administratora pod `/register`, następnie dodaj użytkowników z `/admin/users` i przypisz modele, KB, umiejętności, politykę narzędzi/MCP i dostęp do wykonania kodu przez uprawnienia.
+**Włącz:** włącz uwierzytelnianie w `data/user/settings/auth.json`, uruchom ponownie `deeptutor start`, zarejestruj pierwszego administratora pod `/register`, następnie dodaj użytkowników z `/admin/users` i przypisz modele, KB, umiejętności, Partners, politykę narzędzi/MCP i dostęp do wykonania kodu przez uprawnienia.
 
 > PocketBase pozostaje integracją jednoosobową — zostaw `integrations.pocketbase_url` puste dla wdrożeń wieloużytkownikowych chyba że podłączyłeś zewnętrzny magazyn użytkowników.
 
