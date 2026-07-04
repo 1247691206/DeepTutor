@@ -6,6 +6,68 @@ import asyncio
 import logging
 from typing import Any
 
+_QUESTION_STATE_HEADER = {
+    "en": "[Current question — live state, refreshed every turn]",
+    "zh": "[当前题目 — 实时状态，每轮刷新]",
+}
+_QUESTION_STATE_CONTRACT = {
+    "en": (
+        "The correct answer above is an INTERNAL reference for you only — "
+        "never state it, confirm it, or imply it (e.g. via tone) unless "
+        "`Answer revealed` is true. While it is false: you may silently use "
+        "the correct answer to judge whether the student's own reasoning or "
+        "stated answer is on the right track, but respond only with hints, "
+        "questions, or pointing to the first mistake — never the letter/value "
+        "itself. Once `Answer revealed` is true, you may confirm plainly and "
+        "explain fully."
+    ),
+    "zh": (
+        "上面的正确答案仅供你内部参考 — 除非「答案已核对」为真，否则绝不能"
+        "说出、确认或暗示它。为假时：你可以悄悄用它判断学生的推理或所选答案"
+        "是否正确，但只能通过提示、反问或指出第一个错误来回应 — 绝不能直接"
+        "说出字母/数值。「答案已核对」为真后，才可以直接确认并完整讲解。"
+    ),
+}
+
+
+def _render_question_state_block(context: "UnifiedContext") -> str:
+    """Render the practice-page question's live, per-turn-refreshed state.
+
+    Unlike the one-time system message written to session history on turn 1
+    (see turn_runtime._format_followup_question_context), this reads
+    ``metadata.question_followup_context`` — which the runtime updates on
+    EVERY turn — so answer selection / reveal state stay in sync with the
+    left-hand question viewer for the whole session, not just turn 1.
+    """
+    followup = context.metadata.get("question_followup_context") or {}
+    if not isinstance(followup, dict) or not followup.get("question_id"):
+        return ""
+
+    lang = "zh" if str(context.language or "en").lower().startswith("zh") else "en"
+    user_answer = str(followup.get("user_answer") or "").strip()
+    correct_answer = str(followup.get("correct_answer") or "").strip()
+    revealed = bool(followup.get("answer_revealed"))
+
+    if lang == "zh":
+        lines = [
+            _QUESTION_STATE_HEADER["zh"],
+            f"题目编号：{followup.get('question_id') or '（无）'}",
+            f"学生当前选择：{user_answer or '（尚未作答）'}",
+            f"正确答案（内部参考）：{correct_answer or '（无）'}",
+            f"答案已核对：{'是' if revealed else '否'}",
+        ]
+    else:
+        lines = [
+            _QUESTION_STATE_HEADER["en"],
+            f"Question ID: {followup.get('question_id') or '(none)'}",
+            f"Student's current selection: {user_answer or '(not answered yet)'}",
+            f"Correct answer (internal reference): {correct_answer or '(none)'}",
+            f"Answer revealed: {'yes' if revealed else 'no'}",
+        ]
+    if correct_answer:
+        lines.append(_QUESTION_STATE_CONTRACT[lang])
+    return "\n".join(lines)
+
 from deeptutor.agents._shared.tool_composition import (
     ToolMountFlags,
     compose_enabled_tools,
@@ -382,6 +444,15 @@ class AgenticChatPipeline:
                     "[Conversation summary]",
                 )
                 messages.append({"role": "system", "content": f"{header}\n{content}"})
+        question_state = _render_question_state_block(context)
+        if question_state:
+            # Deliberately NOT folded into ``system_prompt`` (which must stay
+            # byte-stable across loop rounds for the KB cache prefix) and NOT
+            # written once to session history like the turn-1 bootstrap
+            # message — this re-renders from metadata on every turn, so
+            # answer selection / reveal state on the practice page's left
+            # panel stays live for the whole session, not frozen at turn 1.
+            messages.append({"role": "system", "content": question_state})
         messages.append({"role": "user", "content": user_content})
         return self._prepare_messages_with_attachments(messages, context)
 

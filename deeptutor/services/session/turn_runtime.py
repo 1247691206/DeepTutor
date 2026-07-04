@@ -424,6 +424,7 @@ def _extract_followup_question_context(
         "difficulty": str(raw.get("difficulty", "") or "").strip(),
         "concentration": str(raw.get("concentration", "") or "").strip(),
         "knowledge_context": _clip_text(str(raw.get("knowledge_context", "") or "").strip()),
+        "answer_revealed": bool(raw.get("answer_revealed")),
         "user_answer": str(raw.get("user_answer", "") or "").strip(),
         "is_correct": raw.get("is_correct"),
         # Filenames of the learner's image answers, when any were attached.
