@@ -52,7 +52,7 @@ def _render_question_state_block(context: "UnifiedContext") -> str:
         lines = [
             _QUESTION_STATE_HEADER["zh"],
             f"题目编号：{followup.get('question_id') or '（无）'}",
-            f"学生当前选择：{user_answer or '（尚未作答）'}",
+            f"学生在本题的选择：{user_answer or '（尚未作答）'}",
             f"正确答案（内部参考）：{correct_answer or '（无）'}",
             f"答案已核对：{'是' if revealed else '否'}",
         ]
@@ -60,7 +60,7 @@ def _render_question_state_block(context: "UnifiedContext") -> str:
         lines = [
             _QUESTION_STATE_HEADER["en"],
             f"Question ID: {followup.get('question_id') or '(none)'}",
-            f"Student's current selection: {user_answer or '(not answered yet)'}",
+            f"Student's selection on this question: {user_answer or '(not answered yet)'}",
             f"Correct answer (internal reference): {correct_answer or '(none)'}",
             f"Answer revealed: {'yes' if revealed else 'no'}",
         ]
