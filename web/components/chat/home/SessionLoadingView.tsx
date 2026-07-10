@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2, X } from "lucide-react";
+import { publicAssetPath } from "@/lib/public-asset";
 
 /**
  * Indeterminate loading overlay shown while a chat session is fetched from
@@ -48,7 +49,7 @@ export default function SessionLoadingView({
       {/* Logo + spinner */}
       <div className="flex items-center gap-3">
         <img
-          src="/logo_black.png"
+          src={publicAssetPath("/logo_black.png")}
           alt="DeepTutor"
           width={32}
           height={32}

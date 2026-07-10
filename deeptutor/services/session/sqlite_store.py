@@ -780,13 +780,25 @@ class SQLiteSessionStore:
 
             resolved_parent_id: int | None
             if isinstance(parent_message_id, _Unset):
-                # Legacy auto-append path: chain off the latest row in the
-                # session so the linear thread stays connected.
-                last_row = conn.execute(
-                    "SELECT id FROM messages WHERE session_id = ? ORDER BY id DESC LIMIT 1",
-                    (session_id,),
-                ).fetchone()
-                resolved_parent_id = int(last_row["id"]) if last_row is not None else None
+                # Legacy auto-append path: chain off the latest *visible*
+                # row. System rows are hidden by the web UI, so parenting a
+                # user/assistant turn under a system message makes the
+                # transcript disappear after reload (no root children under
+                # ``buildVisiblePath``). Skip system when choosing the tip.
+                if role == "system":
+                    resolved_parent_id = None
+                else:
+                    last_row = conn.execute(
+                        """
+                        SELECT id FROM messages
+                        WHERE session_id = ? AND role != 'system'
+                        ORDER BY id DESC LIMIT 1
+                        """,
+                        (session_id,),
+                    ).fetchone()
+                    resolved_parent_id = (
+                        int(last_row["id"]) if last_row is not None else None
+                    )
             else:
                 # Caller pinned a parent explicitly — including ``None``,
                 # which means "attach at the session root" (used by edits

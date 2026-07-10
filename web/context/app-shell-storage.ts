@@ -8,6 +8,28 @@ export const SIDEBAR_COLLAPSED_STORAGE_KEY = "deeptutor.sidebarCollapsed";
 export const CHAT_RESPONSE_TIMEOUT_STORAGE_KEY =
   "deeptutor.chatResponseTimeout";
 
+/** Tenant id from `/u/<tenant>/...` public path (path-mode multi-tenant). */
+export function tenantIdFromPathname(
+  pathname: string | null | undefined,
+): string | null {
+  if (!pathname) return null;
+  const m = pathname.match(/^\/u\/([^/]+)/);
+  return m?.[1] || null;
+}
+
+/** Scope sessionStorage keys so admin switching tenants cannot reuse session ids. */
+export function activeSessionStorageKey(
+  pathname?: string | null,
+): string {
+  const path =
+    pathname ??
+    (typeof window !== "undefined" ? window.location.pathname : "");
+  const tenant = tenantIdFromPathname(path);
+  return tenant
+    ? `${ACTIVE_SESSION_STORAGE_KEY}.${tenant}`
+    : ACTIVE_SESSION_STORAGE_KEY;
+}
+
 // Mirror of the per-user ``chat_response_timeout`` UI preference. Cached in
 // localStorage so the chat watchdog (a separate provider from Settings) can
 // read it synchronously without its own fetch. Kept in sync on settings load.
@@ -85,7 +107,7 @@ export function writeStoredLanguage(language: AppLanguage): void {
 export function readStoredActiveSessionId(): string | null {
   if (typeof window === "undefined") return null;
   try {
-    return window.sessionStorage.getItem(ACTIVE_SESSION_STORAGE_KEY);
+    return window.sessionStorage.getItem(activeSessionStorageKey());
   } catch {
     return null;
   }
@@ -94,10 +116,11 @@ export function readStoredActiveSessionId(): string | null {
 export function writeStoredActiveSessionId(sessionId: string | null): void {
   if (typeof window === "undefined") return;
   try {
+    const key = activeSessionStorageKey();
     if (sessionId) {
-      window.sessionStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, sessionId);
+      window.sessionStorage.setItem(key, sessionId);
     } else {
-      window.sessionStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
+      window.sessionStorage.removeItem(key);
     }
     window.dispatchEvent(
       new CustomEvent(ACTIVE_SESSION_EVENT, {

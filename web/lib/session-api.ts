@@ -137,8 +137,12 @@ export async function listSessions(
     limit: String(limit),
     offset: String(offset),
   });
+  const tenantScope =
+    typeof window !== "undefined"
+      ? window.location.pathname.match(/^\/u\/([^/]+)/)?.[1] || "local"
+      : "ssr";
   return withClientCache<SessionSummary[]>(
-    `sessions:${limit}:${offset}`,
+    `sessions:${tenantScope}:${limit}:${offset}`,
     async () => {
       const response = await apiFetch(
         apiUrl(`/api/v1/sessions?${qs.toString()}`),

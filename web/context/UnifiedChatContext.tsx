@@ -958,6 +958,40 @@ export function UnifiedChatProvider({
 
   const hydrateMessages = useCallback(
     (messages: SessionMessage[]): MessageItem[] => {
+      // Quiz follow-ups (and similar) persist a leading ``system`` row as the
+      // branch root. The UI hides system rows, so any child whose
+      // ``parent_message_id`` points at that system id would become an
+      // orphan under ``buildVisiblePath`` (no root children → blank
+      // transcript) the moment ``loadSession`` replaces the optimistic
+      // stream state. Walk past hidden ancestors to the nearest visible
+      // parent (or ``null``) before rendering.
+      const byId = new Map<number, SessionMessage>();
+      const hiddenIds = new Set<number>();
+      for (const message of messages) {
+        if (typeof message.id === "number") byId.set(message.id, message);
+        if (message.role === "system" && typeof message.id === "number") {
+          hiddenIds.add(message.id);
+        }
+      }
+
+      const visibleParentId = (
+        parentId: number | null | undefined,
+      ): number | null => {
+        let current = parentId === undefined ? null : parentId;
+        const guard = new Set<number>();
+        while (current != null) {
+          if (guard.has(current)) return null;
+          guard.add(current);
+          if (!hiddenIds.has(current)) {
+            return byId.has(current) ? current : null;
+          }
+          const hidden = byId.get(current);
+          const next = hidden?.parent_message_id;
+          current = next === undefined ? null : next;
+        }
+        return null;
+      };
+
       return messages
         .filter((message) => message.role !== "system")
         .map((message) => {
@@ -978,10 +1012,7 @@ export function UnifiedChatProvider({
             capability: message.capability || "",
             events: Array.isArray(message.events) ? message.events : [],
             attachments,
-            parentMessageId:
-              message.parent_message_id === undefined
-                ? null
-                : message.parent_message_id,
+            parentMessageId: visibleParentId(message.parent_message_id),
             ...(requestSnapshot ? { requestSnapshot } : {}),
           };
         });

@@ -19,8 +19,25 @@
  * @param path - API path (e.g., '/api/v1/knowledge/list')
  * @returns The same path, unchanged
  */
-export function apiUrl(path: string): string {
+function tenantPrefixFromLocation(): string {
+  if (typeof window === "undefined") return "";
+  const match = window.location.pathname.match(/^\/u\/([^/]+)/);
+  const tenant = match?.[1]?.trim();
+  return tenant ? `/u/${tenant}` : "";
+}
+
+function withTenantPrefix(path: string): string {
+  const prefix = tenantPrefixFromLocation();
+  if (!prefix) return path;
+  if (!path.startsWith("/")) return path;
+  if (path.startsWith("/u/")) return path;
+  // Path-mode tenant routing needs tenant-scoped API/WS paths.
+  if (path.startsWith("/api/") || path.startsWith("/ws/")) return `${prefix}${path}`;
   return path;
+}
+
+export function apiUrl(path: string): string {
+  return withTenantPrefix(path);
 }
 
 /**
@@ -34,7 +51,7 @@ export function apiUrl(path: string): string {
  * @returns The same path, unchanged
  */
 export function wsUrl(path: string): string {
-  return path;
+  return withTenantPrefix(path);
 }
 
 /**

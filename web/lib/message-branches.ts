@@ -62,6 +62,19 @@ export function buildVisiblePath(
   allMessages: MessageItem[],
   selectedBranches: Record<string, number> | undefined,
 ): VisiblePathResult {
+  // Some legacy/imported sessions may carry incomplete branch metadata
+  // (missing ids, broken parent pointers, etc.). If strict branch walking
+  // yields an empty path while raw messages exist, fall back to linear order
+  // so the transcript remains visible instead of rendering a blank panel.
+  const linearFallback = (): VisiblePathResult => ({
+    messages: [...allMessages].sort((a, b) => {
+      const aid = typeof a.id === "number" ? a.id : Number.NEGATIVE_INFINITY;
+      const bid = typeof b.id === "number" ? b.id : Number.NEGATIVE_INFINITY;
+      return aid - bid;
+    }),
+    siblingsByMessageId: new Map<number, SiblingInfo>(),
+  });
+
   // Group by parent.
   const childrenByParent = new Map<string, MessageItem[]>();
   for (const msg of allMessages) {
@@ -113,6 +126,10 @@ export function buildVisiblePath(
 
     if (chosen.id === undefined) break;
     currentParent = String(chosen.id);
+  }
+
+  if (allMessages.length > 0 && visible.length === 0) {
+    return linearFallback();
   }
 
   return { messages: visible, siblingsByMessageId };

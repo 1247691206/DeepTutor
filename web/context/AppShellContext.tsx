@@ -22,6 +22,7 @@ import {
   LANGUAGE_STORAGE_KEY,
   SIDEBAR_COLLAPSED_EVENT,
   SIDEBAR_COLLAPSED_STORAGE_KEY,
+  activeSessionStorageKey,
   normalizeLanguage,
   readStoredActiveSessionId,
   readStoredLanguage,
@@ -77,8 +78,19 @@ export function AppShellProvider({ children }: { children: React.ReactNode }) {
       if (event.key === LANGUAGE_STORAGE_KEY) {
         setLanguageState(normalizeLanguage(event.newValue));
       }
-      if (event.key === ACTIVE_SESSION_STORAGE_KEY) {
-        setActiveSessionIdState(event.newValue);
+      if (
+        event.key === ACTIVE_SESSION_STORAGE_KEY ||
+        event.key === activeSessionStorageKey() ||
+        (typeof event.key === "string" &&
+          event.key.startsWith(`${ACTIVE_SESSION_STORAGE_KEY}.`))
+      ) {
+        // Only apply storage events for the current tenant key.
+        if (
+          event.key === activeSessionStorageKey() ||
+          event.key === ACTIVE_SESSION_STORAGE_KEY
+        ) {
+          setActiveSessionIdState(event.newValue);
+        }
       }
       if (event.key === SIDEBAR_COLLAPSED_STORAGE_KEY) {
         setSidebarCollapsedState(event.newValue === "1");

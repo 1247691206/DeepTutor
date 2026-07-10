@@ -27,6 +27,7 @@ import { useTranslation } from "react-i18next";
 import SessionList from "@/components/SessionList";
 import { VersionBadge } from "@/components/sidebar/VersionBadge";
 import type { SessionSummary } from "@/lib/session-api";
+import { publicAssetPath } from "@/lib/public-asset";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useCapabilityAccess } from "@/components/access/CapabilityAccessContext";
 import type { Capability } from "@/lib/capability-routes";
@@ -197,7 +198,7 @@ export function SidebarShell({
             className="flex items-center justify-center transition-opacity duration-150 group-hover/sb:opacity-0"
           >
             <Image
-              src="/logo.png"
+              src={publicAssetPath("/logo.png")}
               alt="DeepTutor"
               width={22}
               height={22}
@@ -326,14 +327,14 @@ export function SidebarShell({
       <div className="flex h-14 items-center justify-between px-4">
         <Link href="/" className="group flex items-center gap-1.5">
           <Image
-            src="/logo.png"
+            src={publicAssetPath("/logo.png")}
             alt="DeepTutor"
             width={22}
             height={22}
             className="h-[22px] w-[22px] transition-transform duration-200 group-hover:scale-105"
           />
           <Image
-            src="/banner.png"
+            src={publicAssetPath("/banner.png")}
             alt="DeepTutor"
             width={897}
             height={236}

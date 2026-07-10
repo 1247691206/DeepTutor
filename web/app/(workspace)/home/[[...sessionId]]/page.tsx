@@ -104,6 +104,7 @@ import {
   invalidateEnabledOptionalToolsCache,
 } from "@/lib/tools-settings";
 import { downloadChatMarkdown } from "@/lib/chat-export";
+import { publicAssetPath } from "@/lib/public-asset";
 import type { SpaceMemoryFile } from "@/lib/space-items";
 import {
   selectedBooksToPayload,
@@ -539,6 +540,7 @@ export default function ChatPage() {
   // Session-loading overlay: shown while navigating from chat-history →
   // session detail. Holds an AbortController so the user can cancel.
   const [sessionLoading, setSessionLoading] = useState(false);
+  const [sessionLoadError, setSessionLoadError] = useState<string | null>(null);
   const loadAbortRef = useRef<AbortController | null>(null);
   // Bridge ref: ``ChatComposer`` writes a prefill function into this on
   // mount; ``ChatMessageList`` reads it via ``handlePrefillComposer`` so an
@@ -887,6 +889,7 @@ export default function ChatPage() {
       loadAbortRef.current?.abort();
       const ctrl = new AbortController();
       loadAbortRef.current = ctrl;
+      setSessionLoadError(null);
       setSessionLoading(true);
 
       void loadSession(sid, ctrl.signal)
@@ -896,15 +899,28 @@ export default function ChatPage() {
             setSessionLoading(false);
           }
         })
-        .catch(() => {
+        .catch((err: unknown) => {
           if (!ctrl.signal.aborted) {
             loadAbortRef.current = null;
             setSessionLoading(false);
+            const msg = err instanceof Error ? err.message : String(err);
+            // Wrong-tenant deep links and deleted chats both 404 here.
+            if (/\b404\b/.test(msg)) {
+              setSessionLoadError(
+                t(
+                  "This chat was not found in this workspace. It may belong to another user or have been deleted.",
+                ),
+              );
+            } else {
+              setSessionLoadError(
+                t("Could not open this chat. Please try again."),
+              );
+            }
             navigateToHome();
           }
         });
     },
-    [loadSession, navigateToHome],
+    [loadSession, navigateToHome, t],
   );
 
   // Initial mount — load the session from the URL.
@@ -1853,13 +1869,30 @@ export default function ChatPage() {
             </div>
           </div>
           <div className="mx-auto flex w-full max-w-[960px] flex-1 min-h-0 flex-col overflow-hidden px-6">
+            {sessionLoadError ? (
+              <div
+                role="alert"
+                className="mt-4 rounded-md border border-[var(--border)] bg-[var(--muted)] px-4 py-3 text-sm text-[var(--foreground)]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p>{sessionLoadError}</p>
+                  <button
+                    type="button"
+                    className="shrink-0 text-[var(--muted-foreground)] underline"
+                    onClick={() => setSessionLoadError(null)}
+                  >
+                    {t("Dismiss")}
+                  </button>
+                </div>
+              </div>
+            ) : null}
             {sessionLoading ? (
               <SessionLoadingView onCancel={cancelSessionLoad} />
             ) : !hasMessages ? (
               <div className="flex flex-1 min-h-0 flex-col items-center justify-end pb-14 animate-fade-in">
                 <div className="flex items-center justify-center gap-4">
                   <img
-                    src="/logo_black.png"
+                    src={publicAssetPath("/logo_black.png")}
                     alt="DeepTutor"
                     width={40}
                     height={40}
