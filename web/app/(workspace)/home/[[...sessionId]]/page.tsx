@@ -1893,7 +1893,7 @@ export default function ChatPage() {
                 <div className="flex items-center justify-center gap-4">
                   <img
                     src={publicAssetPath("/logo_black.png")}
-                    alt="DeepTutor"
+                    alt="OxCa Tutor"
                     width={40}
                     height={40}
                     className="h-10 w-10 select-none"

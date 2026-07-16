@@ -368,6 +368,13 @@ async def websocket_quiz_judge(websocket: WebSocket):
 
     await safe_send({"type": "started"})
 
+    from deeptutor.services.model_selection.cost_tier import (
+        activate_cheap_llm,
+        reset_cheap_llm,
+    )
+
+    cheap_token = activate_cheap_llm()
+
     # Build a multimodal user message when ≥1 image was attached. We pass
     # the full ``messages`` array to ``factory.stream`` so it forwards the
     # content-parts unchanged (the single-image ``image_data`` kwarg only
@@ -416,6 +423,7 @@ async def websocket_quiz_judge(websocket: WebSocket):
         logger.exception("AI judge stream failed")
         await safe_send({"type": "error", "content": format_exception_message(exc)})
     finally:
+        reset_cheap_llm(cheap_token)
         try:
             await websocket.close()
         except Exception:

@@ -320,15 +320,20 @@ class ContextBuilder:
                 f"请基于下面的材料更新摘要，总长度不超过 {target_tokens} tokens。\n\n{source_text}"
             )
         try:
+            # Rolling history compression is internal work — prefer cheap tier
+            # even when the surrounding coach turn uses the strong model.
+            from deeptutor.services.model_selection.cost_tier import cheap_llm_scope
+
             _chunks: list[str] = []
-            async for _c in agent.stream_llm(
-                user_prompt=user_prompt,
-                system_prompt=system_prompt,
-                max_tokens=summary_budget,
-                stage="summarize_context",
-                trace_meta=trace_meta,
-            ):
-                _chunks.append(_c)
+            with cheap_llm_scope():
+                async for _c in agent.stream_llm(
+                    user_prompt=user_prompt,
+                    system_prompt=system_prompt,
+                    max_tokens=summary_budget,
+                    stage="summarize_context",
+                    trace_meta=trace_meta,
+                ):
+                    _chunks.append(_c)
             summary = "".join(_chunks).strip()
             if count_tokens(summary) >= int(summary_budget * TRUNCATION_GUARD_RATIO):
                 summary = trim_incomplete_tail(summary)

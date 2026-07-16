@@ -319,7 +319,7 @@ class TestRegenerateLastTurn:
         monkeypatch.setattr(
             "deeptutor.services.memory.get_memory_store",
             lambda: SimpleNamespace(
-                read_l3_concat=lambda: "",
+                read_l3_concat=lambda: "", read_l3_for_injection=lambda *_a, **_k: "",
                 emit=tracking_emit,
             ),
         )

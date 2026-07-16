@@ -74,46 +74,50 @@ class UpdateRecordRequest(BaseModel):
 async def _build_record_summary(request: AddRecordRequest) -> str:
     if request.summary.strip():
         return clean_thinking_tags(request.summary).strip()
-    agent = NotebookSummarizeAgent(language=str(request.metadata.get("ui_language", "en")))
-    return clean_thinking_tags(
-        await agent.summarize(
-            title=request.title,
-            record_type=request.record_type,
-            user_query=request.user_query,
-            output=request.output,
-            metadata=request.metadata,
-        )
-    ).strip()
+    from deeptutor.services.model_selection.cost_tier import cheap_llm_scope
+
+    with cheap_llm_scope():
+        agent = NotebookSummarizeAgent(language=str(request.metadata.get("ui_language", "en")))
+        return clean_thinking_tags(
+            await agent.summarize(
+                title=request.title,
+                record_type=request.record_type,
+                user_query=request.user_query,
+                output=request.output,
+                metadata=request.metadata,
+            )
+        ).strip()
 
 
 async def _stream_add_record_with_summary(
     request: AddRecordRequest,
 ) -> AsyncGenerator[str, None]:
     try:
-        agent = NotebookSummarizeAgent(language=str(request.metadata.get("ui_language", "en")))
-        summary_parts: list[str] = []
-        if request.summary.strip():
-            summary = clean_thinking_tags(request.summary).strip()
-            summary_parts.append(summary)
-            if summary:
-                yield f"data: {json.dumps({'type': 'summary_chunk', 'content': summary}, ensure_ascii=False)}\n\n"
-        else:
-            async for chunk in agent.stream_summary(
-                title=request.title,
-                record_type=request.record_type,
-                user_query=request.user_query,
-                output=request.output,
-                metadata=request.metadata,
-            ):
-                if not chunk:
-                    continue
-                summary_parts.append(chunk)
+        from deeptutor.services.model_selection.cost_tier import cheap_llm_scope
+
+        with cheap_llm_scope():
+            agent = NotebookSummarizeAgent(language=str(request.metadata.get("ui_language", "en")))
+            summary_parts: list[str] = []
+            if request.summary.strip():
+                summary = clean_thinking_tags(request.summary).strip()
+                summary_parts.append(summary)
+                if summary:
+                    yield f"data: {json.dumps({'type': 'summary_chunk', 'content': summary}, ensure_ascii=False)}\n\n"
+            else:
+                async for chunk in agent.stream_summary(
+                    title=request.title,
+                    record_type=request.record_type,
+                    user_query=request.user_query,
+                    output=request.output,
+                    metadata=request.metadata,
+                ):
+                    if not chunk:
+                        continue
+                    summary_parts.append(chunk)
+                    yield f"data: {json.dumps({'type': 'summary_chunk', 'content': chunk}, ensure_ascii=False)}\n\n"
 
             summary = clean_thinking_tags("".join(summary_parts)).strip()
-            if summary:
-                yield f"data: {json.dumps({'type': 'summary_chunk', 'content': summary}, ensure_ascii=False)}\n\n"
 
-        summary = clean_thinking_tags("".join(summary_parts)).strip()
         result = notebook_manager.add_record(
             notebook_ids=request.notebook_ids,
             record_type=request.record_type,

@@ -13,8 +13,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import logging
 from pathlib import Path
+import re
 import shutil
-from typing import Literal
+from typing import Literal, Sequence
 
 from deeptutor.services.memory import consolidator, paths, trace
 from deeptutor.services.memory.consolidator import ConsolidateResult, OnEvent
@@ -32,6 +33,45 @@ _V1_FILES = ("PROFILE.md", "SUMMARY.md")
 _NO_MEMORY = (
     "(No memory available — interact with DeepTutor and update from the Memory page to build one.)"
 )
+
+# Coach turn injection caps (chars). Keeps strong-model context lean.
+_INJECT_PER_SLOT_MAX_CHARS = 1200
+_INJECT_TOTAL_MAX_CHARS = 2000
+
+# Client "summary" maps onto L3 recent.md (session-style timeline).
+_REF_TO_L3_SLOT: dict[str, L3Slot] = {
+    "profile": "profile",
+    "summary": "recent",
+    "recent": "recent",
+    "scope": "scope",
+    "preferences": "preferences",
+}
+
+_LEVELS_AUTO_RE = re.compile(
+    r"<!--\s*oxca-levels-auto:start\s*-->.*?<!--\s*oxca-levels-auto:end\s*-->",
+    re.DOTALL | re.IGNORECASE,
+)
+
+
+def _strip_levels_auto_section(text: str) -> str:
+    return _LEVELS_AUTO_RE.sub("", text).strip()
+
+
+def _clip_chars(text: str, limit: int) -> str:
+    body = text.strip()
+    if limit <= 0 or len(body) <= limit:
+        return body
+    cut = body[: max(0, limit - 1)].rstrip()
+    return f"{cut}…"
+
+
+def _resolve_injection_slots(references: Sequence[str]) -> list[L3Slot]:
+    slots: list[L3Slot] = []
+    for ref in references:
+        slot = _REF_TO_L3_SLOT.get(str(ref or "").strip())
+        if slot and slot not in slots:
+            slots.append(slot)
+    return slots
 
 
 @dataclass
@@ -79,6 +119,43 @@ class MemoryStore:
         if not parts:
             return _NO_MEMORY
         return "\n\n---\n\n".join(parts) + "\n"
+
+    def read_l3_for_injection(
+        self,
+        references: Sequence[str],
+        *,
+        per_slot_max_chars: int = _INJECT_PER_SLOT_MAX_CHARS,
+        total_max_chars: int = _INJECT_TOTAL_MAX_CHARS,
+    ) -> str:
+        """Build a trimmed L3 snippet for coach turn injection.
+
+        Unlike :meth:`read_l3_concat`, only the requested slots are included
+        (``summary`` maps to L3 ``recent``). Auto Levels blocks are stripped
+        from profile, and each slot / the total payload is hard-capped so
+        strong-model turns do not burn tokens on bulky memory.
+        """
+        slots = _resolve_injection_slots(references)
+        if not slots:
+            return ""
+
+        parts: list[str] = []
+        for slot in slots:
+            body = self.read_raw("L3", slot).strip()
+            if not body:
+                continue
+            if slot == "profile":
+                body = _strip_levels_auto_section(body)
+            body = body.strip()
+            if not body:
+                continue
+            body = _clip_chars(body, per_slot_max_chars)
+            parts.append(f"## L3/{slot}\n{body}")
+
+        if not parts:
+            return ""
+
+        joined = "\n\n---\n\n".join(parts)
+        return _clip_chars(joined, total_max_chars)
 
     # ── L2 / L3 write (manual paths) ──────────────────────────────────────
 

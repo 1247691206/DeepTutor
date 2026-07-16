@@ -46,6 +46,33 @@ def test_read_l3_concat_joins_present_slots(tmp_memory: Path) -> None:
     assert "(No memory available" not in out
 
 
+def test_read_l3_for_injection_only_requested_slots(tmp_memory: Path) -> None:
+    (tmp_memory / "L3" / "profile.md").write_text(
+        "<!-- oxca-levels-auto:start -->\n## Levels practice (auto)\n- noise\n"
+        "<!-- oxca-levels-auto:end -->\n\n## Identity\n- likes physics\n"
+    )
+    (tmp_memory / "L3" / "recent.md").write_text("## Current Focus\n- waves\n")
+    (tmp_memory / "L3" / "preferences.md").write_text("## Style\n- terse\n")
+    out = MemoryStore().read_l3_for_injection(["summary", "profile"])
+    assert "L3/profile" in out
+    assert "likes physics" in out
+    assert "Levels practice" not in out
+    assert "L3/recent" in out
+    assert "waves" in out
+    assert "L3/preferences" not in out
+
+
+def test_read_l3_for_injection_respects_caps(tmp_memory: Path) -> None:
+    (tmp_memory / "L3" / "profile.md").write_text("x" * 5000)
+    out = MemoryStore().read_l3_for_injection(
+        ["profile"],
+        per_slot_max_chars=100,
+        total_max_chars=80,
+    )
+    assert len(out) <= 80
+    assert out.endswith("…")
+
+
 def test_overwrite_and_read_doc_roundtrip(tmp_memory: Path) -> None:
     s = MemoryStore()
     md = (

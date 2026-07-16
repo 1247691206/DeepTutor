@@ -178,12 +178,12 @@ def _uses_memory_excluded_skill(payload: dict[str, Any]) -> bool:
 
 
 def _extract_memory_references(payload: dict[str, Any]) -> list[MemoryReference]:
-    """Return the L3 slot names the client opted in for this turn.
+    """Return the memory slot names the client opted in for this turn.
 
-    Any non-empty list triggers ``read_l3_concat`` injection in v2 — the
-    individual names are kept for forward-compat with workbench UI hints
-    (e.g. "I want preferences in this turn") even though the read tool
-    returns the full concat.
+    A non-empty list triggers trimmed L3 injection via
+    :meth:`MemoryStore.read_l3_for_injection` (only requested slots,
+    ``summary`` → ``recent``, with size caps). Names are also kept for
+    workbench / tool hints.
     """
     refs = payload.get("memory_references", []) or []
     if not isinstance(refs, list):
@@ -1224,6 +1224,9 @@ class TurnRuntimeManager:
             from deeptutor.core.context import Attachment, UnifiedContext
             from deeptutor.runtime.orchestrator import ChatOrchestrator
             from deeptutor.services.memory import get_memory_store
+            from deeptutor.services.model_selection.cost_tier import (
+                selection_for_capability,
+            )
             from deeptutor.services.model_selection.runtime import (
                 activate_llm_selection,
             )
@@ -1365,7 +1368,11 @@ class TurnRuntimeManager:
                         capability=capability_name or "chat",
                     )
 
-            llm_config, llm_scope_token = activate_llm_selection(payload.get("llm_selection"))
+            llm_config, llm_scope_token = activate_llm_selection(
+                selection_for_capability(
+                    capability_name, payload.get("llm_selection")
+                )
+            )
             builder = ContextBuilder(self.store)
 
             async def _emit_context_event(event: StreamEvent) -> None:
@@ -1381,7 +1388,11 @@ class TurnRuntimeManager:
                 leaf_message_id=branch_parent_id,
             )
             memory_store = get_memory_store()
-            memory_context = memory_store.read_l3_concat() if memory_references else ""
+            memory_context = (
+                memory_store.read_l3_for_injection(memory_references)
+                if memory_references
+                else ""
+            )
 
             # Persona: at most one behaviour preset per turn, eagerly
             # injected (a persona must shape the voice from the first

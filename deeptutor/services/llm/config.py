@@ -143,6 +143,11 @@ def reset_scoped_llm_config(token: Token[LLMConfig | None]) -> None:
     _SCOPED_LLM_CONFIG.reset(token)
 
 
+def get_scoped_llm_config() -> LLMConfig | None:
+    """Return the current context-scoped LLM config, if any."""
+    return _SCOPED_LLM_CONFIG.get()
+
+
 def initialize_environment() -> None:
     """
     Explicitly initialize environment variables for compatibility.
@@ -286,6 +291,9 @@ __all__ = [
     "LLMConfig",
     "get_llm_config",
     "get_llm_config_async",
+    "get_scoped_llm_config",
+    "set_scoped_llm_config",
+    "reset_scoped_llm_config",
     "clear_llm_config_cache",
     "reload_config",
     "uses_max_completion_tokens",

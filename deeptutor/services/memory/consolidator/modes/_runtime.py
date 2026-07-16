@@ -104,7 +104,36 @@ async def call_llm(
     :func:`activate_llm_selection` if the user picked a non-default
     model. Emits ``llm_io_start`` / ``llm_io_end`` events for the
     workbench trace.
+
+    Consolidation jobs prefer the cheap catalog model when no stronger
+    scoped config is already active (see :mod:`cost_tier`).
     """
+    from deeptutor.services.model_selection.cost_tier import cheap_llm_scope
+
+    with cheap_llm_scope(only_if_idle=True):
+        return await _call_llm_body(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            on_event=on_event,
+            turn=turn,
+            chunk_index=chunk_index,
+            label=label,
+        )
+
+
+async def _call_llm_body(
+    *,
+    system_prompt: str,
+    user_prompt: str,
+    temperature: float = 0.2,
+    max_tokens: int = 1500,
+    on_event: OnEvent | None = None,
+    turn: int | None = None,
+    chunk_index: int | None = None,
+    label: str | None = None,
+) -> str:
     from deeptutor.services.llm import get_llm_config
 
     model_label = get_llm_config().model or None
